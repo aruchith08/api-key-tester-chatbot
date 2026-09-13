@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Plus, Mic, ArrowUp, Zap, ChevronDown, Paperclip, Image as ImageIcon, X } from 'lucide-react';
+import { Plus, Mic, MicOff, ArrowUp, Zap, ChevronDown, Paperclip, Image as ImageIcon, X } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 import type { MessageAttachment } from '../../types/chat';
 
 interface ChatInputProps {
@@ -17,6 +18,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
+  const textPrefixRef = useRef('');
+
   const {
     apiKey,
     selectedModel,
@@ -27,6 +30,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
     setModelSelectorOpen,
     showNotification
   } = useAppStore();
+
+  const { isListening, toggleListening, stopListening } = useVoiceInput({
+    onTranscript: (transcript, isFinal) => {
+      if (isFinal) {
+        textPrefixRef.current = `${textPrefixRef.current}${transcript} `;
+        setText(textPrefixRef.current.trim());
+      } else {
+        setText(`${textPrefixRef.current}${transcript}`);
+      }
+    },
+    onError: (err) => {
+      showNotification(err);
+    }
+  });
+
+  const handleMicClick = () => {
+    if (!isListening) {
+      textPrefixRef.current = text ? `${text.trim()} ` : '';
+    }
+    toggleListening();
+  };
 
   // Auto resize textarea
   useEffect(() => {
@@ -44,6 +68,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   };
 
   const handleSubmit = () => {
+    if (isListening) {
+      stopListening();
+    }
+
     if (isGenerating) {
       stopGeneration();
       return;
@@ -138,6 +166,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
           </div>
         )}
 
+        {/* Voice listening status indicator */}
+        {isListening && (
+          <div className="flex items-center gap-2 mb-2.5 py-1 px-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-red-400 animate-ping shrink-0" />
+            <span className="font-medium">Listening... speak into your microphone (click mic to stop)</span>
+          </div>
+        )}
+
         {/* Input Text Area Row */}
         <div className="flex items-start justify-between gap-3">
           <textarea
@@ -145,7 +181,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="How can I help you today?"
+            placeholder={isListening ? "Listening... speak now" : "How can I help you today?"}
             rows={1}
             className="w-full bg-transparent text-[#EDEDED] placeholder-[#5A5A62] text-sm sm:text-base resize-none outline-none leading-relaxed min-h-[28px] max-h-[200px]"
             style={{ scrollbarWidth: 'none' }}
@@ -231,14 +267,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
 
           {/* Right Controls: Mic + Model Indicator + Send */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Microphone with Tooltip */}
+            {/* Microphone with Tooltip & State */}
             <button
               type="button"
-              onClick={() => showNotification('Voice input is ready for integration.')}
-              className="p-1.5 text-neutral-500 hover:text-neutral-300 hover:bg-white/5 rounded-lg transition-colors"
-              title="Voice Input"
+              onClick={handleMicClick}
+              className={`p-1.5 rounded-lg transition-all ${
+                isListening
+                  ? 'text-red-400 bg-red-500/20 ring-1 ring-red-500/50 hover:bg-red-500/30 animate-pulse'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+              }`}
+              title={isListening ? "Listening... Click to stop" : "Voice Input (Speech-to-Text)"}
             >
-              <Mic className="w-4 h-4" />
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
 
             {/* Active Model Indicator */}
