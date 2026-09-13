@@ -88,10 +88,17 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       };
 
       recognition.onerror = (event: any) => {
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          optionsRef.current.onError?.('Microphone access was denied. Please allow microphone permissions in your browser.');
-        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          optionsRef.current.onError?.(`Voice recognition error: ${event.error}`);
+        const err = event.error;
+        if (err === 'not-allowed' || err === 'service-not-allowed') {
+          optionsRef.current.onError?.('Microphone access denied. Click the lock/settings icon in your browser address bar and set Microphone to "Allow".');
+        } else if (err === 'network') {
+          optionsRef.current.onError?.('Speech service network error. If using Brave browser, enable "Google Services for Speech" in settings. Also ensure you are accessing via http://localhost:5173 or HTTPS.');
+        } else if (err === 'audio-capture') {
+          optionsRef.current.onError?.('No microphone detected or audio input is in use by another application.');
+        } else if (err === 'language-not-supported') {
+          optionsRef.current.onError?.('Voice language is not supported by your browser speech engine.');
+        } else if (err !== 'no-speech' && err !== 'aborted') {
+          optionsRef.current.onError?.(`Voice recognition error (${err}). Please try speaking again.`);
         }
         setIsListening(false);
       };
