@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/appStore';
 import { ChatMessageItem } from './ChatMessageItem';
 import { ChatInput } from './ChatInput';
 import { ARHLogo } from '../Home/ARHLogo';
-import { RotateCcw, Trash2, Terminal, Zap, ArrowDown } from 'lucide-react';
+import { RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info } from 'lucide-react';
 import type { MessageAttachment } from '../../types/chat';
 
 interface ChatConversationProps {
@@ -22,6 +22,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
     selectedProvider,
     setModelSelectorOpen,
     setDeveloperModeOpen,
+    setAboutModalOpen,
     clearChat
   } = useAppStore();
 
@@ -110,6 +111,17 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Clear</span>
+          </button>
+
+          {/* About */}
+          <button
+            type="button"
+            onClick={() => setAboutModalOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
+            title="About ARH"
+          >
+            <Info className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="hidden sm:inline">About</span>
           </button>
 
           {/* Dev Mode */}

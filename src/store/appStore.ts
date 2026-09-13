@@ -64,6 +64,7 @@ interface AppState {
   isApiKeyModalOpen: boolean;
   isModelSelectorOpen: boolean;
   isDeveloperModeOpen: boolean;
+  isAboutModalOpen: boolean;
   notification: string | null;
   
   // Developer Inspector
@@ -85,6 +86,7 @@ interface AppState {
   setApiKeyModalOpen: (open: boolean) => void;
   setModelSelectorOpen: (open: boolean) => void;
   setDeveloperModeOpen: (open: boolean) => void;
+  setAboutModalOpen: (open: boolean) => void;
   showNotification: (msg: string) => void;
   clearNotification: () => void;
   
@@ -127,6 +129,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isApiKeyModalOpen: false,
   isModelSelectorOpen: false,
   isDeveloperModeOpen: false,
+  isAboutModalOpen: false,
   notification: null,
   
   lastRequest: null,
@@ -188,6 +191,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setApiKeyModalOpen: (isApiKeyModalOpen) => set({ isApiKeyModalOpen }),
   setModelSelectorOpen: (isModelSelectorOpen) => set({ isModelSelectorOpen }),
   setDeveloperModeOpen: (isDeveloperModeOpen) => set({ isDeveloperModeOpen }),
+  setAboutModalOpen: (isAboutModalOpen) => set({ isAboutModalOpen }),
   
   showNotification: (msg) => {
     set({ notification: msg });

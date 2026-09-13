@@ -2,7 +2,7 @@ import React from 'react';
 import { ARHLogo } from './ARHLogo';
 import { Greeting } from './Greeting';
 import { ChatInput } from '../Chat/ChatInput';
-import { KeyRound, Sparkles, Terminal } from 'lucide-react';
+import { KeyRound, Sparkles, Terminal, Info } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import type { MessageAttachment } from '../../types/chat';
 
@@ -14,6 +14,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
   const { 
     setApiKeyModalOpen, 
     setDeveloperModeOpen,
+    setAboutModalOpen,
     apiKey, 
     selectedProvider,
     selectedModel 
@@ -44,13 +45,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           )}
         </button>
 
-        {/* Top-Right: Discreet Developer Mode / Status Trigger */}
+        {/* Top-Right: About & Developer Mode Triggers */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAboutModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141416]/70 hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs transition-all cursor-pointer"
+            title="About ARH Application"
+          >
+            <Info className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="inline">About</span>
+          </button>
+
           {isConnected && (
             <button
               type="button"
               onClick={() => setDeveloperModeOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141416]/70 hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141416]/70 hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs transition-all cursor-pointer"
               title="Open Developer Inspector"
             >
               <Terminal className="w-3.5 h-3.5 text-neutral-400" />
@@ -79,10 +90,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       </main>
 
       {/* Footer Minimal Indicator */}
-      <footer className="relative z-10 text-center py-2 text-xs text-[#3E3E44] select-none">
-        <span className="tracking-widest uppercase font-mono text-[10px] text-neutral-600">ARH</span>
-        <span className="mx-2 text-neutral-800">·</span>
-        <span className="text-[11px] text-neutral-600">AI API Playground</span>
+      <footer className="relative z-10 text-center py-2 text-xs select-none">
+        <button
+          type="button"
+          onClick={() => setAboutModalOpen(true)}
+          className="inline-flex items-center gap-1.5 text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer"
+          title="About ARH"
+        >
+          <span className="tracking-widest uppercase font-mono text-[10px]">ARH</span>
+          <span className="text-neutral-800">·</span>
+          <span className="text-[11px]">AI API Testing Ground</span>
+          <span className="text-neutral-800">·</span>
+          <span className="text-[11px] underline underline-offset-2">About</span>
+        </button>
       </footer>
     </div>
   );
