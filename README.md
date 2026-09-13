@@ -1,15 +1,16 @@
 <div align="center">
 
-# ⚡ ARH — AI API Testing Ground
+# ⚡ ARH — AI API Testing Ground & Agent Sandbox
 
-**A minimalist, universal, and stateless playground to test, validate, and chat with 18+ AI providers instantly.**
+**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 18+ AI providers instantly.**
 
-[![Tests](https://img.shields.io/badge/tests-130%20passed-emerald?style=flat-square)](https://github.com)
+[![Tests](https://img.shields.io/badge/tests-186%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-cyan?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?style=flat-square&logo=vite)](https://vitejs.dev/)
+[![Pyodide](https://img.shields.io/badge/Pyodide-WebAssembly%20Python-yellow?style=flat-square)](https://pyodide.org/)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployable-black?style=flat-square&logo=vercel)](https://vercel.com/)
-[![Security](https://img.shields.io/badge/storage-zero%20persistence-green?style=flat-square)](https://github.com)
+[![Security](https://img.shields.io/badge/storage-zero%20persistence-green?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 
 </div>
 
@@ -17,35 +18,59 @@
 
 ## 🌟 What is ARH?
 
-**ARH (API Testing Ground)** is a developer-first AI playground designed to test API keys across any major foundation model provider without setup friction, backend databases, or complex configurations. 
+**ARH (API Testing Ground & Agent Sandbox)** is a developer-first AI playground designed to test API keys across any major foundation model provider without setup friction, backend databases, or complex configurations. 
 
-Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session.
+Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Capabilities & Features
 
 ### 1. 🔍 Instant Key Pattern Detection
 - Heuristic regex engine identifies distinct key signatures in real-time as you type or paste (`gsk_` for Groq, `nvapi-` for NVIDIA NIM, `AIzaSy` for Google Gemini, `sk-ant-` for Anthropic, `sk-or-` for OpenRouter, `sk-proj-` for OpenAI, etc.).
 - Categorizes confidence levels (`high`, `medium`, `low`) with transparent rationale and multi-candidate manual selection for ambiguous keys.
 
-### 2. 🛡️ Zero-Persistence Ephemeral Security
-- **No databases. No localStorage. No telemetry. No logging.**
-- Your API key lives strictly in runtime React/Zustand memory.
+### 2. 🤖 Autonomous Agent Mode (In-Flight Tool Calling Loop)
+- **True Agentic Harness**: Models that support function/tool calling (OpenAI GPT-4o, Groq LLaMA 3.3/3.1, Claude 3.5, Gemini 1.5/2.0) are equipped with the `execute_python` tool.
+- **ReAct Execution Loop**: The model emits a tool call, the app pauses generation, executes the script in the client-side Pyodide sandbox, extracts any generated files, feeds the results (`stdout`, `stderr`, file list) back into the conversation context with `{ role: 'tool' }`, and prompts the model to verify its output before writing the final response.
+- **Fail-Safe Fallback**: If a provider or custom endpoint does not support tool schemas, ARH automatically falls back to direct chat mode with post-generation detection.
+
+### 3. 🐍 Client-Side WebAssembly Python Sandbox (Pyodide)
+- Runs Python 3 inside an isolated browser Web Worker powered by WebAssembly (Wasm) and an in-memory virtual filesystem (MEMFS).
+- **Preloaded Document & Data Libraries**: Supports `python-docx` (`docx`), `openpyxl`, `pandas`, `matplotlib`, `reportlab`, `pydantic`, and `sympy`.
+- **Autonomous File Extraction**: When scripts call `doc.save('report.docx')`, `wb.save('data.xlsx')`, `plt.savefig('chart.png')`, or `open('data.csv', 'w')`, generated binary files are automatically extracted into browser Blob URLs with download cards.
+- **Manual Execution**: Every code block features an interactive "Run in Sandbox" button with live status pills and logs drawers.
+
+### 4. 📂 Right-Side In-Browser File Preview Drawer ("Sider")
+- Slide-over drawer on the right side of the screen for instant, zero-software previewing of chat artifacts:
+  - 📄 **PDFs (`.pdf`)**: Native embedded browser PDF reader with zoom, search, and page navigation.
+  - 📝 **Word Documents (`.docx`, `.doc`)**: Lazy-loaded Mammoth.js engine rendering styled paper document layouts with headings, styled tables, lists, and images.
+  - 📊 **Excel Spreadsheets (`.xlsx`, `.xls`, `.csv`, `.tsv`)**: Lazy-loaded SheetJS workbook parser with **multi-sheet tabs** (`Sheet1`, `Sheet2`), sticky column headers (A, B, C...), row indices, search/cell filtering, and gridlines.
+  - 🌐 **HTML (`.html`, `.htm`)**: Dual-view toggle between sandboxed visual iframe preview and syntax-highlighted source code.
+  - 🖼️ **Images (`.png`, `.jpg`, `.jpeg`, `.svg`, `.webp`, `.gif`)**: Interactive canvas with Zoom In (+), Zoom Out (-), Reset (100%), and transparency checkerboard.
+  - 💻 **Code & Text (`.txt`, `.md`, `.json`, `.py`, `.sql`)**: Syntax-highlighted text reader with line numbers and 1-click copy.
+  - **Fullscreen Toggle**: Expand the preview drawer across the full viewport with one click.
+
+### 5. 🧠 Reasoning & Thinking Model Support
+- Separate visual thinking drawers for reasoning models (DeepSeek-R1, Cerebras, Nemotron, OpenAI o1/o3-mini).
+- Automatically parses `<think>` XML blocks or separate SSE reasoning streams (`delta.reasoning_content`) with collapsible accordion display and duration metrics.
+
+### 6. 🎙️ Voice Input (Speech-to-Text)
+- Integrated Web Speech API microphone input with real-time audio pulsing indicators and automatic punctuation.
+
+### 7. 🛡️ Zero-Persistence Ephemeral Security
+- **No databases. No localStorage. No telemetry. No server logs.**
+- Your API key and conversation history live strictly in runtime memory.
 - Closing or refreshing the tab completely wipes all credentials from existence.
-- Automatic key masking (`sk-proj-...1a2b`) protects your screen from accidental shoulder-surfing.
+- Automatic key masking (`sk-proj-...1a2b`) protects your screen from shoulder-surfing.
 
-### 3. 🌐 Adaptive Connection Architecture
-- **Direct Browser Transport**: For providers with open CORS (such as Groq, OpenRouter, Hugging Face, Together), requests stream directly from your browser to the provider’s endpoint.
-- **Stateless Proxy Fallback**: For enterprise server-to-server APIs that restrict browser CORS (such as NVIDIA NIM and OpenAI), ARH routes requests through a lightweight, stateless proxy (built into Vite for local dev and Vercel Edge Functions for production).
+### 8. 🌐 Adaptive Connection Architecture
+- **Direct Browser Transport**: For providers with open CORS (Groq, OpenRouter, Hugging Face, Together), requests stream directly from your browser to the provider’s endpoint.
+- **Stateless Proxy Fallback**: For enterprise APIs that restrict browser CORS (NVIDIA NIM and OpenAI), ARH routes requests through a lightweight, stateless proxy (built into Vite for local dev and Vercel Edge Functions for production).
 
-### 4. 🔄 Universal SSE Normalization
-- Unifies streaming protocols from OpenAI-compatible Server-Sent Events, Google Gemini chunk formats, and Anthropic content-block streaming into a standardized token stream.
-- Captures token usage, timing metrics, first-token latency, and finish reasons.
-
-### 5. 🔍 Developer Mode & Inspector
+### 9. 🔍 Developer Mode & Inspector
 - Dedicated **`>_ Dev Mode`** drawer.
-- Inspect raw HTTP requests, sanitized headers (with secrets masked), response bodies, status codes, and latency breakdowns for every call.
+- Inspect raw HTTP requests, sanitized headers (secrets masked), response bodies, status codes, and latency breakdowns for every call.
 
 ---
 
@@ -53,25 +78,25 @@ Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, O
 
 ARH includes built-in adapters and model normalization for 18 industry providers:
 
-| Provider | Key Signature | Connection Mode | Dynamic Models | Live Streaming |
-| :--- | :--- | :--- | :---: | :---: |
-| **Groq** | `gsk_...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Google Gemini** | `AIzaSy...` | Direct (Query Auth) | ✅ Yes | ✅ Yes |
-| **Anthropic Claude** | `sk-ant-api03-...` | Direct (Caveat Header) | ✅ Yes | ✅ Yes |
-| **OpenRouter** | `sk-or-v1-...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **NVIDIA NIM** | `nvapi-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes |
-| **OpenAI** | `sk-proj-...` / `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes |
-| **DeepSeek** | `sk-...` (32 hex) | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes |
-| **Together AI** | `64-hex key` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Fireworks AI** | `fw_...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Cerebras** | `csk-...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Perplexity AI** | `pplx-...` | Proxy Fallback (CORS) | ✅ Fallback | ✅ Yes |
-| **xAI (Grok)** | `xai-...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Mistral AI** | `32-char key` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Cohere** | `40-char key` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Hugging Face** | `hf_...` | Direct Browser | ✅ Yes | ✅ Yes |
-| **Moonshot (Kimi)** | `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes |
-| **Custom / Ollama** | `http://...` | Direct Localhost | ✅ Yes | ✅ Yes |
+| Provider | Key Signature | Connection Mode | Dynamic Models | Live Streaming | Tool Calling / Agent |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| **Groq** | `gsk_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Google Gemini** | `AIzaSy...` | Direct (Query Auth) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Anthropic Claude** | `sk-ant-api03-...` | Direct (Caveat Header) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **OpenRouter** | `sk-or-v1-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **NVIDIA NIM** | `nvapi-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **OpenAI** | `sk-proj-...` / `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **DeepSeek** | `sk-...` (32 hex) | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Together AI** | `64-hex key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Fireworks AI** | `fw_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Cerebras** | `csk-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Perplexity AI** | `pplx-...` | Proxy Fallback (CORS) | ✅ Fallback | ✅ Yes | ✅ Fallback |
+| **xAI (Grok)** | `xai-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Mistral AI** | `32-char key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Cohere** | `40-char key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Hugging Face** | `hf_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Moonshot (Kimi)** | `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Custom / Ollama** | `http://...` | Direct Localhost | ✅ Yes | ✅ Yes | ✅ Yes |
 
 ---
 
@@ -108,6 +133,22 @@ ARH includes built-in adapters and model normalization for 18 industry providers
                      ┌──────────────────────────────────┐
                      │         AI Provider API          │
                      │  (Groq, OpenAI, Anthropic, NIM)  │
+                     └─────────────────┬────────────────┘
+                                       │
+                           Tool Call / Code Emitted
+                                       │
+                                       ▼
+                     ┌──────────────────────────────────┐
+                     │ Pyodide WebAssembly Sandbox (Wasm)│
+                     │ (MEMFS, docx, openpyxl, pandas)  │
+                     └─────────────────┬────────────────┘
+                                       │
+                           Extracted Artifacts & Logs
+                                       │
+                                       ▼
+                     ┌──────────────────────────────────┐
+                     │ Right-Side Preview Drawer Sider  │
+                     │ (PDF, Word, Excel, HTML, Images) │
                      └──────────────────────────────────┘
 ```
 
@@ -123,8 +164,8 @@ ARH includes built-in adapters and model normalization for 18 industry providers
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/aruchith08/api-key-tester---chatbot.git
-cd api-key-tester---chatbot
+git clone https://github.com/aruchith08/api-key-tester-chatbot.git
+cd api-key-tester-chatbot
 
 # 2. Install dependencies
 npm install
@@ -139,7 +180,7 @@ Visit **`http://localhost:5173`** in your browser.
 
 ## 🧪 Automated Testing
 
-ARH has an automated test suite comprising **130 unit, adapter, heuristic, and normalization tests**:
+ARH includes an automated test suite comprising **186 unit, adapter, heuristic, sandbox, and normalization tests**:
 
 ```bash
 # Run all automated test suites
@@ -153,8 +194,10 @@ npm test
 - **Google Gemini Adapter**: 11 tests covering system instruction, multipart image payload, and role mapping.
 - **Anthropic Claude Adapter**: 9 tests verifying header compliance and message structure.
 - **Error Normalization**: 14 tests checking status codes (401, 403, 429, 500, network blocks).
-- **Streaming SSE Parsing**: 13 tests covering token deltas, usage metadata, and chunk framing.
+- **Streaming SSE Parsing**: 24 tests covering token deltas, usage metadata, reasoning chunks, and think tags.
 - **Transport & Strategy**: 21 tests validating connection mode determination and truth layers.
+- **Python Code Detection & Heuristics**: 15 tests verifying file-saving patterns across libraries.
+- **Autonomous Agent Tools & ReAct Harness**: 26 tests verifying tool schemas, argument parsers, multi-turn tool message formatting, streaming tool call aggregation, and preview drawer state management.
 - **Live Integration Testing**: Conditional test harnesses for environment variables.
 
 ---
@@ -189,7 +232,7 @@ vercel
 - **Client-Side First**: Your API keys are kept entirely within your local browser memory.
 - **Zero Backend Storage**: ARH does not have a database, user tracking, or third-party analytical cookies.
 - **Ephemeral Sessions**: Refreshing the browser or clearing the state destroys all active credentials and chat contents.
-- **Open Source**: All network requests and adapters are transparent and open for inspection in [`src/providers`](./src/providers).
+- **Open Source**: All network requests and adapters are transparent and open for inspection in [`src/providers`](./src/providers) and [`src/sandbox`](./src/sandbox).
 
 ---
 
