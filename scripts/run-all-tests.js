@@ -66,7 +66,11 @@ async function main() {
     const { runTransportTests } = await server.ssrLoadModule('./tests/transport/transport.test.ts');
     await runTransportTests(server, assert);
 
-    // 6. Integration suite (conditional on env keys)
+    // 6. Sandbox & Code Detector suite
+    const { runCodeDetectorTests } = await server.ssrLoadModule('./tests/sandbox/codeDetector.test.ts');
+    await runCodeDetectorTests(server, assert);
+
+    // 7. Integration suite (conditional on env keys)
     const { runRealApiIntegrationTests } = await server.ssrLoadModule('./tests/integration/real-api.test.ts');
     await runRealApiIntegrationTests(server, assert, recordSkip);
 

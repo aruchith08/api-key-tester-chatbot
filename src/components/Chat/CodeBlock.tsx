@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Play } from 'lucide-react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
@@ -14,9 +14,16 @@ import 'prismjs/components/prism-sql';
 interface CodeBlockProps {
   language?: string;
   code: string;
+  onRunCode?: (code: string) => void;
+  isRunning?: boolean;
 }
 
-export const CodeBlock: React.FC<CodeBlockProps> = ({ language = 'text', code }) => {
+export const CodeBlock: React.FC<CodeBlockProps> = ({ 
+  language = 'text', 
+  code,
+  onRunCode,
+  isRunning = false
+}) => {
   const [copied, setCopied] = useState(false);
 
   const cleanLang = language.toLowerCase().replace(/^language-/, '');
@@ -48,24 +55,39 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ language = 'text', code })
         <span className="text-[11px] font-medium text-neutral-400 select-none">
           {cleanLang || 'code'}
         </span>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2 py-1 text-[11px] hover:text-white rounded transition-colors"
-          title="Copy code"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-400">Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5 text-neutral-400" />
-              <span>Copy</span>
-            </>
+        <div className="flex items-center gap-2">
+          {['python', 'py', 'python3'].includes(cleanLang) && onRunCode && (
+            <button
+              type="button"
+              onClick={() => onRunCode(code)}
+              disabled={isRunning}
+              className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded transition-colors disabled:opacity-40 cursor-pointer"
+              title="Execute Python script in Pyodide sandbox"
+            >
+              <Play className="w-3 h-3 fill-emerald-400" />
+              <span>{isRunning ? 'Running...' : 'Run in Sandbox'}</span>
+            </button>
           )}
-        </button>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-2 py-1 text-[11px] hover:text-white rounded transition-colors"
+            title="Copy code"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Code Content */}

@@ -5,6 +5,9 @@ import type { ChatMessage } from '../../types/chat';
 import { useAppStore } from '../../store/appStore';
 import { CodeBlock } from './CodeBlock';
 import { ThinkingBlock } from './ThinkingBlock';
+import { ArtifactFileCard } from './ArtifactFileCard';
+import { ExecutionLogsDrawer } from './ExecutionLogsDrawer';
+import { sandboxRunner } from '../../sandbox/sandboxRunner';
 import { parseThinking } from '../../utils/thinkingParser';
 import { Copy, Check, AlertCircle, FileText } from 'lucide-react';
 
@@ -19,12 +22,42 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   onRegenerate,
   isLatest = false,
 }) => {
-  const { setModelSelectorOpen } = useAppStore();
+  const { setModelSelectorOpen, setMessageExecution } = useAppStore();
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
 
   // Parse thinking and output separately
   const { thinking, content, isThinking } = parseThinking(message.content, message.thinking);
+
+  const handleRunPythonCode = async (codeToRun: string) => {
+    setMessageExecution(message.id, {
+      status: 'running',
+      statusMessage: '⚡ Initializing Python sandbox...',
+      code: codeToRun
+    });
+
+    const result = await sandboxRunner.runPython(
+      codeToRun,
+      (statusMessage) => {
+        setMessageExecution(message.id, {
+          status: 'running',
+          statusMessage,
+          code: codeToRun
+        });
+      }
+    );
+
+    setMessageExecution(message.id, {
+      status: result.success ? 'success' : 'error',
+      statusMessage: result.success ? 'Execution complete' : 'Execution failed',
+      code: codeToRun,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      durationMs: result.durationMs,
+      files: result.files,
+      error: result.error
+    });
+  };
 
   const handleCopy = async () => {
     try {
@@ -127,6 +160,8 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
                           <CodeBlock
                             language={match ? match[1] : 'text'}
                             code={String(children).replace(/\n$/, '')}
+                            onRunCode={handleRunPythonCode}
+                            isRunning={message.execution?.status === 'running'}
                           />
                         );
                       },
@@ -156,6 +191,37 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
                 message.isStreaming && !thinking && (
                   <span className="inline-block w-2 h-4 bg-emerald-400 animate-pulse rounded-xs align-middle" />
                 )
+              )}
+
+              {/* Active Sandbox Execution Status Banner */}
+              {message.execution?.status === 'running' && (
+                <div className="my-3 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-xs text-emerald-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="font-medium font-mono">
+                    {message.execution.statusMessage || '⚡ Running code in sandbox...'}
+                  </span>
+                </div>
+              )}
+
+              {/* Generated Artifacts / Downloadable Files */}
+              {message.execution?.files && message.execution.files.length > 0 && (
+                <div className="my-3">
+                  <div className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <span>Generated Artifacts</span>
+                    <span className="text-emerald-400 font-mono">({message.execution.files.length})</span>
+                  </div>
+                  {message.execution.files.map((file, idx) => (
+                    <ArtifactFileCard key={idx} file={file} />
+                  ))}
+                </div>
+              )}
+
+              {/* Execution Logs Drawer */}
+              {message.execution && message.execution.status !== 'running' && (
+                <ExecutionLogsDrawer execution={message.execution} />
               )}
 
               {/* Message Footer Controls: Copy, Metrics */}

@@ -6,6 +6,25 @@ export interface MessageAttachment {
   size: number;
 }
 
+export interface GeneratedFile {
+  name: string;
+  url: string; // Browser Blob URL
+  size: number;
+  mimeType: string;
+  createdAt: number;
+}
+
+export interface CodeExecutionState {
+  status: 'idle' | 'running' | 'success' | 'error';
+  statusMessage?: string;
+  code?: string;
+  stdout?: string;
+  stderr?: string;
+  durationMs?: number;
+  files?: GeneratedFile[];
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -22,6 +41,7 @@ export interface ChatMessage {
     completionTokens?: number;
     totalTokens?: number;
   };
+  execution?: CodeExecutionState;
 }
 
 export interface ChatState {

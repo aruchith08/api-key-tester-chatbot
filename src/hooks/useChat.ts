@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
 import { ProviderRegistry } from '../providers/registry';
+import { findExecutableFileScript } from '../utils/codeDetector';
+import { sandboxRunner } from '../sandbox/sandboxRunner';
 import type { MessageAttachment } from '../types/chat';
 
 export function useChat() {
@@ -141,6 +143,47 @@ export function useChat() {
       updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics, accumulatedThinking);
       setGenerating(false, null);
       useAppStore.getState().setChatState('idle');
+
+      // Autonomous in-browser sandbox execution for file generation
+      const autoScript = findExecutableFileScript(accumulated);
+      if (autoScript) {
+        useAppStore.getState().setMessageExecution(assistantMsgId, {
+          status: 'running',
+          statusMessage: '⚡ Initializing Python sandbox...',
+          code: autoScript
+        });
+
+        sandboxRunner.runPython(
+          autoScript,
+          (statusMessage) => {
+            useAppStore.getState().setMessageExecution(assistantMsgId, {
+              status: 'running',
+              statusMessage,
+              code: autoScript
+            });
+          }
+        ).then((result) => {
+          useAppStore.getState().setMessageExecution(assistantMsgId, {
+            status: result.success ? 'success' : 'error',
+            statusMessage: result.success ? 'File generation complete' : 'Execution failed',
+            code: autoScript,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            durationMs: result.durationMs,
+            files: result.files,
+            error: result.error
+          });
+        }).catch((err) => {
+          useAppStore.getState().setMessageExecution(assistantMsgId, {
+            status: 'error',
+            statusMessage: 'Execution error',
+            code: autoScript,
+            stdout: '',
+            stderr: err?.message || String(err),
+            error: err?.message || 'Sandbox error'
+          });
+        });
+      }
 
       // Mark Chat PASSED
       updateVerificationStage('chat', {

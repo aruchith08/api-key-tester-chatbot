@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Model, ProviderDefinition, ConnectionResult, ResolvedConnectionStrategy } from '../types/provider';
-import type { ChatMessage, MessageAttachment } from '../types/chat';
+import type { ChatMessage, MessageAttachment, CodeExecutionState } from '../types/chat';
 import type { InspectorRequestData, InspectorResponseData, PerformanceMetricsData } from '../types/capabilities';
 import type { ProviderSessionVerification, VerificationStageResult } from '../types/verification';
 import { createInitialVerification, calculateOverallStatus } from '../types/verification';
@@ -94,6 +94,7 @@ interface AppState {
   addUserMessage: (content: string, attachments?: MessageAttachment[]) => string;
   addAssistantPlaceholder: () => string;
   updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData, thinking?: string) => void;
+  setMessageExecution: (id: string, execution: CodeExecutionState) => void;
   setAssistantError: (id: string, error: string) => void;
   setGenerating: (generating: boolean, controller?: AbortController | null) => void;
   stopGeneration: () => void;
@@ -241,6 +242,14 @@ export const useAppStore = create<AppState>((set, get) => ({
               ...(metrics ? { metrics } : {}) 
             } 
           : m
+      )
+    }));
+  },
+
+  setMessageExecution: (id, execution) => {
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.id === id ? { ...m, execution: { ...(m.execution || {}), ...execution } } : m
       )
     }));
   },
