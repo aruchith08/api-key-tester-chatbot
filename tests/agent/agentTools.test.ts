@@ -110,4 +110,34 @@ export async function runAgentToolsTests(server: any, assert: (cond: boolean, ms
   const completeEvent = receivedEvents.find(e => e.type === 'complete');
   assert(completeEvent?.finishReason === 'tool_calls', 'Stream completion finishReason reflects tool_calls');
   assert(completeEvent?.toolCalls?.[0]?.id === 'call_abc', 'Complete event carries toolCalls');
+
+  // 5. File Preview Drawer State in appStore
+  const { useAppStore } = await server.ssrLoadModule('./src/store/appStore.ts');
+  const store = useAppStore.getState();
+  assert(store.previewFile === null, 'Initial previewFile is null');
+
+  const dummyDocx = {
+    name: 'quarterly_report.docx',
+    url: 'blob:http://localhost/dummy-docx',
+    size: 24500,
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    createdAt: Date.now()
+  };
+
+  store.setPreviewFile(dummyDocx);
+  assert(useAppStore.getState().previewFile?.name === 'quarterly_report.docx', 'setPreviewFile sets active preview file');
+
+  const dummyXlsx = {
+    name: 'budget.xlsx',
+    url: 'blob:http://localhost/dummy-xlsx',
+    size: 45000,
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    createdAt: Date.now()
+  };
+
+  store.setPreviewFile(dummyXlsx);
+  assert(useAppStore.getState().previewFile?.name === 'budget.xlsx', 'setPreviewFile updates to spreadsheet preview');
+
+  store.setPreviewFile(null);
+  assert(useAppStore.getState().previewFile === null, 'setPreviewFile(null) closes preview drawer');
 }

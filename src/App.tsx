@@ -5,6 +5,7 @@ import { AddApiKeyModal } from './components/API/AddApiKeyModal';
 import { ModelSelector } from './components/Chat/ModelSelector';
 import { DeveloperMode } from './components/Developer/DeveloperMode';
 import { AboutModal } from './components/About/AboutModal';
+import { FilePreviewDrawer } from './components/Chat/FilePreviewDrawer';
 import { useAppStore } from './store/appStore';
 import { useChat } from './hooks/useChat';
 import { AlertCircle } from 'lucide-react';
@@ -40,6 +41,7 @@ export function App() {
       <ModelSelector />
       <DeveloperMode />
       <AboutModal />
+      <FilePreviewDrawer />
     </div>
   );
 }

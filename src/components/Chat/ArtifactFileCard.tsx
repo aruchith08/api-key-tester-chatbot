@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Download, FileText, FileSpreadsheet, Image as ImageIcon, FileArchive, Eye, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { Download, FileText, FileSpreadsheet, Image as ImageIcon, FileArchive, Eye, Globe, Code } from 'lucide-react';
 import type { GeneratedFile } from '../../types/chat';
+import { useAppStore } from '../../store/appStore';
 
 interface ArtifactFileCardProps {
   file: GeneratedFile;
@@ -15,13 +16,14 @@ function formatBytes(bytes: number): string {
 }
 
 export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
-  const [showPreview, setShowPreview] = useState(false);
+  const { setPreviewFile } = useAppStore();
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
   const isImage = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'].includes(ext);
   const isDoc = ['doc', 'docx', 'odt'].includes(ext);
   const isSpreadsheet = ['xls', 'xlsx', 'csv', 'tsv'].includes(ext);
   const isPdf = ext === 'pdf';
+  const isHtml = ['html', 'htm'].includes(ext);
   const isArchive = ['zip', 'tar', 'gz', 'rar'].includes(ext);
 
   const getFileMeta = () => {
@@ -49,6 +51,14 @@ export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
         label: 'PDF'
       };
     }
+    if (isHtml) {
+      return {
+        icon: <Globe className="w-5 h-5 text-amber-400" />,
+        badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        cardBorder: 'border-amber-500/20 hover:border-amber-500/40',
+        label: 'HTML'
+      };
+    }
     if (isImage) {
       return {
         icon: <ImageIcon className="w-5 h-5 text-purple-400" />,
@@ -66,7 +76,7 @@ export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
       };
     }
     return {
-      icon: <FileText className="w-5 h-5 text-neutral-400" />,
+      icon: <Code className="w-5 h-5 text-neutral-400" />,
       badgeBg: 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20',
       cardBorder: 'border-neutral-500/20 hover:border-neutral-500/40',
       label: ext.toUpperCase() || 'FILE'
@@ -75,7 +85,8 @@ export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
 
   const meta = getFileMeta();
 
-  const handleDownload = () => {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const a = document.createElement('a');
     a.href = file.url;
     a.download = file.name;
@@ -85,16 +96,19 @@ export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
   };
 
   return (
-    <div className={`my-2 rounded-xl bg-[#141417] border ${meta.cardBorder} p-3.5 transition-all duration-200 shadow-sm`}>
+    <div
+      onClick={() => setPreviewFile(file)}
+      className={`my-2 rounded-xl bg-[#141417] border ${meta.cardBorder} p-3.5 transition-all duration-200 shadow-sm cursor-pointer group hover:bg-[#18181C]`}
+    >
       <div className="flex items-center justify-between gap-3">
         {/* Left: Icon & File info */}
         <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2.5 rounded-xl bg-[#1A1A1E] border border-[#26262B] shrink-0">
+          <div className="p-2.5 rounded-xl bg-[#1A1A1E] border border-[#26262B] shrink-0 group-hover:border-[#35353E] transition-colors">
             {meta.icon}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm text-neutral-200 truncate" title={file.name}>
+              <span className="font-medium text-sm text-neutral-200 group-hover:text-white transition-colors truncate" title={file.name}>
                 {file.name}
               </span>
               <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${meta.badgeBg}`}>
@@ -108,41 +122,28 @@ export const ArtifactFileCard: React.FC<ArtifactFileCardProps> = ({ file }) => {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {isImage && (
-            <button
-              type="button"
-              onClick={() => setShowPreview(!showPreview)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 bg-[#1A1A1E] hover:bg-[#222228] border border-[#282830] rounded-lg transition-colors"
-              title="Toggle preview"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{showPreview ? 'Hide' : 'Preview'}</span>
-            </button>
-          )}
+        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setPreviewFile(file)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-300 hover:text-white bg-[#1A1A1E] hover:bg-[#23232A] border border-[#282830] rounded-lg transition-colors cursor-pointer"
+            title={`Preview ${file.name} in side panel`}
+          >
+            <Eye className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="hidden sm:inline">Preview</span>
+          </button>
 
           <button
             type="button"
             onClick={handleDownload}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-500 active:scale-98 rounded-lg transition-all shadow-sm cursor-pointer"
-            title="Download generated file"
+            title="Download file"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Download</span>
           </button>
         </div>
       </div>
-
-      {/* Image Preview drawer if applicable */}
-      {isImage && showPreview && (
-        <div className="mt-3 pt-3 border-t border-[#202026] flex justify-center bg-[#0C0C0E] rounded-lg p-2">
-          <img
-            src={file.url}
-            alt={file.name}
-            className="max-h-72 object-contain rounded border border-[#1E1E24]"
-          />
-        </div>
-      )}
     </div>
   );
 };
