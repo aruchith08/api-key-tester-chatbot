@@ -113,7 +113,7 @@ ARH includes built-in adapters and model normalization for 18 industry providers
                                        ▼
                        ┌────────────────────────────────┐
                        │    Provider Detection Engine   │
-                       │   (Heuristics, RegEx, Rationale)│
+                       │ (Heuristics, RegEx, Rationale) │
                        └───────────────┬────────────────┘
                                        │
                                        ▼
