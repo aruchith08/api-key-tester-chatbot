@@ -74,7 +74,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     documentationUrl: 'https://build.nvidia.com',
     authHeader: 'Authorization',
     authPrefix: 'Bearer',
-    defaultModelId: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    defaultModelId: 'meta/llama-3.2-11b-vision-instruct',
     tier: 1,
     
     connectionMode: 'UNKNOWN',
@@ -91,19 +91,19 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     },
     fallbackModels: [
       {
-        id: 'nvidia/llama-3.1-nemotron-70b-instruct',
-        name: 'Llama 3.1 Nemotron 70B Instruct',
-        provider: 'NVIDIA NIM',
-        contextWindow: 131072,
-        isDefault: true,
-        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
-      },
-      {
         id: 'meta/llama-3.2-11b-vision-instruct',
         name: 'Llama 3.2 11B Vision Instruct',
         provider: 'NVIDIA NIM',
         contextWindow: 131072,
+        isDefault: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        name: 'Llama 3.1 Nemotron 70B Instruct',
+        provider: 'NVIDIA NIM',
+        contextWindow: 131072,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'mistralai/mixtral-8x22b-v0.1',

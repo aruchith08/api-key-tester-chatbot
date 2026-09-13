@@ -61,7 +61,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
               method: 'POST',
               headers: this.getHeaders(apiKey),
               body: {
-                model: this.provider.defaultModelId || resolvedModels[0]?.id || 'nvidia/llama-3.1-nemotron-70b-instruct',
+                model: this.provider.defaultModelId || resolvedModels[0]?.id || 'meta/llama-3.2-11b-vision-instruct',
                 messages: [{ role: 'user', content: 'ping' }],
                 max_tokens: 1
               }

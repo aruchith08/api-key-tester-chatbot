@@ -30,7 +30,7 @@ export function normalizeError(err: any, status?: number): NormalizedError {
     message = 'Rate Limit Reached. Your account quota or requests-per-minute limit was exceeded.';
   } else if (s === 404 || /model not found|unknown model|does not exist/i.test(details)) {
     code = 'NOT_FOUND';
-    message = 'Model Not Found. The requested model ID does not exist or your key lacks access.';
+    message = 'Model Not Found. The requested model ID does not exist or your key lacks access. Try selecting a different model from the model selector.';
   } else if ((s && s >= 500) || /500|internal server error|bad gateway|service unavailable|gateway timeout/i.test(details)) {
     code = 'SERVER_ERROR';
     message = 'Provider Temporarily Unavailable. The AI provider server returned an internal error.';

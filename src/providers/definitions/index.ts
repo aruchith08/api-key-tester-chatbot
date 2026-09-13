@@ -123,7 +123,7 @@ export const PROVIDER_DEFINITIONS: ProviderDefinition[] = [
     keyPatterns: [/^nvapi-[A-Za-z0-9_-]{30,}$/],
     authHeader: 'Authorization',
     authPrefix: 'Bearer',
-    defaultModelId: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    defaultModelId: 'meta/llama-3.2-11b-vision-instruct',
     docsUrl: 'https://build.nvidia.com',
     supportsStreaming: true,
     supportsVision: true,

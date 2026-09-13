@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../../types/chat';
+import { useAppStore } from '../../store/appStore';
 import { CodeBlock } from './CodeBlock';
 import { Copy, Check, AlertCircle, FileText } from 'lucide-react';
 
@@ -16,6 +17,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   onRegenerate,
   isLatest = false,
 }) => {
+  const { setModelSelectorOpen } = useAppStore();
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
 
@@ -69,15 +71,26 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
               <div className="flex-1">
                 <div className="font-semibold text-red-400">Error Generating Response</div>
                 <div className="mt-0.5">{message.error}</div>
-                {onRegenerate && (
-                  <button
-                    type="button"
-                    onClick={onRegenerate}
-                    className="mt-2 px-2.5 py-1 bg-red-900/40 hover:bg-red-900/60 text-red-200 rounded-lg text-xs font-medium transition-colors"
-                  >
-                    Retry Request
-                  </button>
-                )}
+                <div className="flex items-center gap-2 mt-2.5">
+                  {onRegenerate && (
+                    <button
+                      type="button"
+                      onClick={onRegenerate}
+                      className="px-2.5 py-1 bg-red-900/40 hover:bg-red-900/60 text-red-200 rounded-lg text-xs font-medium transition-colors"
+                    >
+                      Retry Request
+                    </button>
+                  )}
+                  {message.error.toLowerCase().includes('model') && (
+                    <button
+                      type="button"
+                      onClick={() => setModelSelectorOpen(true)}
+                      className="px-2.5 py-1 bg-[#222226] hover:bg-[#2C2C32] border border-[#35353C] text-neutral-200 rounded-lg text-xs font-medium transition-colors"
+                    >
+                      Switch Model
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
