@@ -69,6 +69,17 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
     }
   };
 
+  if (message.role === 'tool') {
+    return (
+      <div className="w-full max-w-3xl mx-auto py-1 px-3 sm:px-6">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#141417] border border-[#222226] text-[11px] text-neutral-400 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>⚡ Tool Result ({message.tool_call_id || 'call'}): Processed by sandbox</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`w-full max-w-3xl mx-auto py-3 sm:py-4 px-3 sm:px-6 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
       {/* User Message */}
@@ -139,6 +150,19 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
                 isThinking={isThinking}
                 isStreaming={message.isStreaming}
               />
+
+              {/* Tool Calls Badge */}
+              {message.tool_calls && message.tool_calls.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {message.tool_calls.map((tc, idx) => (
+                    <span key={idx} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#18181D] border border-emerald-500/30 text-xs text-neutral-300 font-mono shadow-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      <span className="text-emerald-400 font-medium">⚡ {tc.function.name}</span>
+                      <span className="text-neutral-500 text-[10px]">tool</span>
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Markdown Rendered Content */}
               {content ? (

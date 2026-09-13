@@ -152,6 +152,17 @@ export type StreamEvent =
       content: string;
     }
   | {
+      type: 'tool_call_delta';
+      index: number;
+      id?: string;
+      name?: string;
+      argumentsDelta?: string;
+    }
+  | {
+      type: 'tool_calls';
+      toolCalls: import('../types/chat').ToolCall[];
+    }
+  | {
       type: 'usage';
       inputTokens?: number;
       outputTokens?: number;
@@ -161,6 +172,7 @@ export type StreamEvent =
       type: 'complete';
       finishReason?: string;
       metrics?: PerformanceMetricsData;
+      toolCalls?: import('../types/chat').ToolCall[];
     }
   | {
       type: 'error';
@@ -176,6 +188,7 @@ export interface ChatParams {
   maxTokens?: number;
   topP?: number;
   stream?: boolean;
+  tools?: any[];
   signal?: AbortSignal;
   onRequestInspector?: (req: InspectorRequestData) => void;
   onResponseInspector?: (res: InspectorResponseData) => void;

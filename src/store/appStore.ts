@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Model, ProviderDefinition, ConnectionResult, ResolvedConnectionStrategy } from '../types/provider';
-import type { ChatMessage, MessageAttachment, CodeExecutionState } from '../types/chat';
+import type { ChatMessage, MessageAttachment, CodeExecutionState, ToolCall } from '../types/chat';
 import type { InspectorRequestData, InspectorResponseData, PerformanceMetricsData } from '../types/capabilities';
 import type { ProviderSessionVerification, VerificationStageResult } from '../types/verification';
 import { createInitialVerification, calculateOverallStatus } from '../types/verification';
@@ -59,6 +59,7 @@ interface AppState {
   chatState: ChatState;
   isGenerating: boolean;
   abortController: AbortController | null;
+  isAgentMode: boolean;
   
   // UI States
   isApiKeyModalOpen: boolean;
@@ -81,6 +82,7 @@ interface AppState {
   setModels: (models: Model[], defaultModel?: Model | null, source?: 'live' | 'fallback') => void;
   setSelectedModel: (model: Model | null) => void;
   setChatState: (state: ChatState) => void;
+  setAgentMode: (enabled: boolean) => void;
   
   // Modal & Panel Toggles
   setApiKeyModalOpen: (open: boolean) => void;
@@ -93,7 +95,8 @@ interface AppState {
   // Chat Actions
   addUserMessage: (content: string, attachments?: MessageAttachment[]) => string;
   addAssistantPlaceholder: () => string;
-  updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData, thinking?: string) => void;
+  updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData, thinking?: string, toolCalls?: ToolCall[]) => void;
+  addToolMessage: (toolCallId: string, content: string) => string;
   setMessageExecution: (id: string, execution: CodeExecutionState) => void;
   setAssistantError: (id: string, error: string) => void;
   setGenerating: (generating: boolean, controller?: AbortController | null) => void;
@@ -126,6 +129,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   chatState: 'idle',
   isGenerating: false,
   abortController: null,
+  isAgentMode: true,
   
   isApiKeyModalOpen: false,
   isModelSelectorOpen: false,
@@ -188,6 +192,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   setSelectedModel: (selectedModel) => set({ selectedModel }),
+  setAgentMode: (isAgentMode) => set({ isAgentMode }),
   
   setApiKeyModalOpen: (isApiKeyModalOpen) => set({ isApiKeyModalOpen }),
   setModelSelectorOpen: (isModelSelectorOpen) => set({ isModelSelectorOpen }),
@@ -230,7 +235,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     return id;
   },
   
-  updateAssistantMessage: (id, content, isStreaming = false, metrics, thinking) => {
+  updateAssistantMessage: (id, content, isStreaming = false, metrics, thinking, toolCalls) => {
     set((state) => ({
       messages: state.messages.map((m) => 
         m.id === id 
@@ -238,12 +243,26 @@ export const useAppStore = create<AppState>((set, get) => ({
               ...m, 
               content, 
               ...(thinking !== undefined ? { thinking } : {}),
+              ...(toolCalls !== undefined ? { tool_calls: toolCalls } : {}),
               isStreaming, 
               ...(metrics ? { metrics } : {}) 
             } 
           : m
       )
     }));
+  },
+
+  addToolMessage: (toolCallId, content) => {
+    const id = 'msg_tool_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const toolMsg: ChatMessage = {
+      id,
+      role: 'tool',
+      tool_call_id: toolCallId,
+      content,
+      timestamp: Date.now()
+    };
+    set((state) => ({ messages: [...state.messages, toolMsg] }));
+    return id;
   },
 
   setMessageExecution: (id, execution) => {

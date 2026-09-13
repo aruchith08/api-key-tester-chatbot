@@ -70,7 +70,11 @@ async function main() {
     const { runCodeDetectorTests } = await server.ssrLoadModule('./tests/sandbox/codeDetector.test.ts');
     await runCodeDetectorTests(server, assert);
 
-    // 7. Integration suite (conditional on env keys)
+    // 7. Autonomous Agent Tools suite
+    const { runAgentToolsTests } = await server.ssrLoadModule('./tests/agent/agentTools.test.ts');
+    await runAgentToolsTests(server, assert);
+
+    // 8. Integration suite (conditional on env keys)
     const { runRealApiIntegrationTests } = await server.ssrLoadModule('./tests/integration/real-api.test.ts');
     await runRealApiIntegrationTests(server, assert, recordSkip);
 

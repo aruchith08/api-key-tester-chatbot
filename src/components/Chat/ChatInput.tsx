@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Plus, Mic, MicOff, ArrowUp, Zap, ChevronDown, Paperclip, Image as ImageIcon, X } from 'lucide-react';
+import { Plus, Mic, MicOff, ArrowUp, Zap, ChevronDown, Paperclip, Image as ImageIcon, X, Bot } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import { useVoiceInput } from '../../hooks/useVoiceInput';
 import type { MessageAttachment } from '../../types/chat';
@@ -25,6 +25,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
     selectedModel,
     selectedProvider,
     isGenerating,
+    isAgentMode,
+    setAgentMode,
     stopGeneration,
     setApiKeyModalOpen,
     setModelSelectorOpen,
@@ -263,6 +265,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                 </button>
               </div>
             )}
+
+            {/* Agent Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = !isAgentMode;
+                setAgentMode(next);
+                showNotification(next ? '🤖 Agent Mode enabled: In-flight tool calling & sandbox loop active' : '💬 Direct Mode enabled: Standard response generation');
+              }}
+              className={`ml-1 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                isAgentMode
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-xs'
+                  : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent'
+              }`}
+              title={isAgentMode ? "Agent Mode: ON (Autonomous tool calling loop enabled)" : "Agent Mode: OFF (Click to enable)"}
+            >
+              <Bot className={`w-3.5 h-3.5 ${isAgentMode ? 'text-emerald-400' : 'text-neutral-500'}`} />
+              <span className="hidden sm:inline">Agent Mode</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isAgentMode ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-600'}`} />
+            </button>
           </div>
 
           {/* Right Controls: Mic + Model Indicator + Send */}

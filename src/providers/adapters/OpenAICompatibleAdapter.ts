@@ -3,7 +3,7 @@ import type { ProviderDefinition, ConnectionResult, AIModel, StreamEvent, ChatPa
 import type { AITransport } from '../transport';
 import { DirectTransport } from '../transport';
 import { normalizeError } from '../error-normalizer';
-import type { ChatMessage } from '../../types/chat';
+import type { ChatMessage, ToolCall } from '../../types/chat';
 import { sanitizeHeaders } from '../../utils/maskApiKey';
 
 export class OpenAICompatibleAdapter implements AIProviderAdapter {
@@ -264,7 +264,26 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     }
 
     for (const msg of messages) {
-      if (msg.role === 'assistant' && !msg.content) continue;
+      if (msg.role === 'tool') {
+        formatted.push({
+          role: 'tool',
+          tool_call_id: msg.tool_call_id || 'call_default',
+          content: msg.content || ''
+        });
+        continue;
+      }
+
+      if (msg.role === 'assistant') {
+        if (msg.tool_calls && msg.tool_calls.length > 0) {
+          formatted.push({
+            role: 'assistant',
+            content: msg.content || null,
+            tool_calls: msg.tool_calls
+          });
+          continue;
+        }
+        if (!msg.content) continue;
+      }
 
       if (msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && this.provider.capabilities.vision) {
         const parts: any[] = [{ type: 'text', text: msg.content || 'Attached image/file' }];
@@ -290,7 +309,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async chat(params: ChatParams): Promise<string> {
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
-    const payload = {
+    const payload: any = {
       model: params.model || this.provider.defaultModelId || 'default',
       messages: this.formatMessages(params.messages, params.systemPrompt),
       temperature: params.temperature ?? 0.7,
@@ -298,6 +317,11 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       top_p: params.topP,
       stream: false
     };
+
+    if (params.tools && params.tools.length > 0) {
+      payload.tools = params.tools;
+      payload.tool_choice = 'auto';
+    }
 
     const startTime = Date.now();
     if (params.onRequestInspector) {
@@ -333,7 +357,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async *streamChat(params: ChatParams): AsyncIterable<StreamEvent> {
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
-    const payload = {
+    const payload: any = {
       model: params.model || this.provider.defaultModelId || 'default',
       messages: this.formatMessages(params.messages, params.systemPrompt),
       temperature: params.temperature ?? 0.7,
@@ -343,11 +367,17 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       stream_options: { include_usage: true }
     };
 
+    if (params.tools && params.tools.length > 0) {
+      payload.tools = params.tools;
+      payload.tool_choice = 'auto';
+    }
+
     const requestStartTime = Date.now();
     let firstTokenTime: number | null = null;
     let fullText = '';
     let usage: any = null;
     let finishReason: string | undefined;
+    const toolCallsMap = new Map<number, { id: string; name: string; arguments: string }>();
 
     if (params.onRequestInspector) {
       params.onRequestInspector({
@@ -420,6 +450,34 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
                   content: deltaContent
                 };
               }
+
+              // Handle streaming tool_calls
+              const deltaToolCalls = data.choices?.[0]?.delta?.tool_calls;
+              if (Array.isArray(deltaToolCalls)) {
+                for (const tc of deltaToolCalls) {
+                  const idx = tc.index ?? 0;
+                  if (!toolCallsMap.has(idx)) {
+                    toolCallsMap.set(idx, {
+                      id: tc.id || `call_${Date.now()}_${idx}`,
+                      name: tc.function?.name || '',
+                      arguments: tc.function?.arguments || ''
+                    });
+                  } else {
+                    const existing = toolCallsMap.get(idx)!;
+                    if (tc.id) existing.id = tc.id;
+                    if (tc.function?.name) existing.name += tc.function.name;
+                    if (tc.function?.arguments) existing.arguments += tc.function.arguments;
+                  }
+
+                  yield {
+                    type: 'tool_call_delta',
+                    index: idx,
+                    id: tc.id,
+                    name: tc.function?.name,
+                    argumentsDelta: tc.function?.arguments
+                  };
+                }
+              }
             } catch (err) {
               // Ignore partial or unparseable SSE line
             }
@@ -458,10 +516,29 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       });
     }
 
+    const finalToolCalls = toolCallsMap.size > 0
+      ? Array.from(toolCallsMap.values()).map(tc => ({
+          id: tc.id,
+          type: 'function' as const,
+          function: {
+            name: tc.name,
+            arguments: tc.arguments
+          }
+        }))
+      : undefined;
+
+    if (finalToolCalls && finalToolCalls.length > 0) {
+      yield {
+        type: 'tool_calls',
+        toolCalls: finalToolCalls
+      };
+    }
+
     yield {
       type: 'complete',
-      finishReason: finishReason || 'stop',
-      metrics
+      finishReason: finishReason || (finalToolCalls ? 'tool_calls' : 'stop'),
+      metrics,
+      toolCalls: finalToolCalls
     };
   }
 }

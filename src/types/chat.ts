@@ -25,11 +25,23 @@ export interface CodeExecutionState {
   error?: string;
 }
 
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   thinking?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+  name?: string;
   attachments?: MessageAttachment[];
   timestamp: number;
   isStreaming?: boolean;
