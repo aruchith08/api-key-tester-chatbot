@@ -139,7 +139,7 @@ ARH includes built-in adapters and model normalization for 18 industry providers
                                        │
                                        ▼
                      ┌──────────────────────────────────┐
-                     │ Pyodide WebAssembly Sandbox (Wasm)│
+                     │Pyodide WebAssembly Sandbox (Wasm)│
                      │ (MEMFS, docx, openpyxl, pandas)  │
                      └─────────────────┬────────────────┘
                                        │
