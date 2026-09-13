@@ -12,7 +12,14 @@ import {
   ExternalLink, 
   CheckCircle2,
   Lock,
-  Globe
+  Globe,
+  Cpu,
+  Bot,
+  Eye,
+  Brain,
+  FileCode,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
@@ -21,7 +28,7 @@ const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5
   </svg>
 );
 
-type Tab = 'overview' | 'architecture' | 'providers' | 'specs';
+type Tab = 'overview' | 'features' | 'architecture' | 'providers' | 'specs';
 
 export const AboutModal: React.FC = () => {
   const { isAboutModalOpen, setAboutModalOpen } = useAppStore();
@@ -46,45 +53,48 @@ export const AboutModal: React.FC = () => {
       onClick={() => setAboutModalOpen(false)}
     >
       <div 
-        className="relative w-full sm:max-w-2xl bg-[#111113] border-t sm:border border-[#26262B] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black overflow-hidden max-h-[90vh] flex flex-col"
+        className="relative w-full sm:max-w-3xl bg-[#111113] border-t sm:border border-[#26262B] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black overflow-hidden max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with Title and Close Button */}
+        {/* Header with Title and Badges */}
         <div className="flex items-start justify-between pb-4 border-b border-[#212126]">
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center p-1 shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center p-1.5 shrink-0">
               <ARHLogo size="sm" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-semibold text-white tracking-tight">ARH</h2>
                 <span className="px-2 py-0.5 text-[10px] font-medium font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                  v1.0.0
+                  v1.2.0
+                </span>
+                <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
+                  Pyodide Wasm Sandbox
                 </span>
                 <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono text-neutral-400 bg-[#1C1C20] border border-[#2B2B30] rounded-full">
                   Zero Persistence
                 </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Universal, Stateless AI API Playground & Key Validator
+                Universal Stateless AI Playground, Autonomous Python Sandbox & File Previewer
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setAboutModalOpen(false)}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 mt-3 mb-2 p-1 bg-[#16161A] border border-[#24242A] rounded-xl text-xs">
+        <div className="flex items-center gap-1 mt-3 mb-2 p-1 bg-[#16161A] border border-[#24242A] rounded-xl text-xs overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium transition-all ${
+            className={`flex-1 min-w-[75px] py-1.5 px-3 rounded-lg font-medium transition-all cursor-pointer ${
               activeTab === 'overview'
                 ? 'bg-[#24242B] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-neutral-200'
@@ -94,8 +104,19 @@ export const AboutModal: React.FC = () => {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('features')}
+            className={`flex-1 min-w-[75px] py-1.5 px-3 rounded-lg font-medium transition-all cursor-pointer ${
+              activeTab === 'features'
+                ? 'bg-[#24242B] text-white shadow-xs'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            Features
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('architecture')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium transition-all ${
+            className={`flex-1 min-w-[85px] py-1.5 px-3 rounded-lg font-medium transition-all cursor-pointer ${
               activeTab === 'architecture'
                 ? 'bg-[#24242B] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-neutral-200'
@@ -106,7 +127,7 @@ export const AboutModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('providers')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium transition-all ${
+            className={`flex-1 min-w-[95px] py-1.5 px-3 rounded-lg font-medium transition-all cursor-pointer ${
               activeTab === 'providers'
                 ? 'bg-[#24242B] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-neutral-200'
@@ -117,7 +138,7 @@ export const AboutModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('specs')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium transition-all ${
+            className={`flex-1 min-w-[80px] py-1.5 px-3 rounded-lg font-medium transition-all cursor-pointer ${
               activeTab === 'specs'
                 ? 'bg-[#24242B] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-neutral-200'
@@ -129,13 +150,17 @@ export const AboutModal: React.FC = () => {
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto py-2 pr-1 space-y-4 text-xs text-neutral-300" style={{ scrollbarWidth: 'none' }}>
+          
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-4 animate-fade-in">
               <div className="p-3.5 bg-[#17171B] border border-[#26262D] rounded-xl leading-relaxed">
                 <p className="text-sm font-medium text-white mb-1.5">What is ARH?</p>
-                <p className="text-neutral-300">
-                  <strong className="text-neutral-100">ARH (API Testing Ground)</strong> is a developer-first AI playground built to test, benchmark, and chat with foundation models across 19+ AI providers instantly without managing multiple SDKs, backend databases, or complex configurations.
+                <p className="text-neutral-300 leading-normal">
+                  <strong className="text-neutral-100">ARH (API Testing Ground & Agent Sandbox)</strong> is a developer-first AI playground built to test, benchmark, and chat with foundation models across {PROVIDER_CATALOG.length} AI providers instantly without managing multiple SDKs, backend databases, or complex configurations.
+                </p>
+                <p className="text-neutral-400 text-[11px] mt-2 leading-relaxed">
+                  Equipped with an in-browser WebAssembly Python sandbox, an autonomous ReAct tool-calling loop, an instant file preview drawer, reasoning stream parsing, and strict zero-persistence security.
                 </p>
               </div>
 
@@ -146,7 +171,7 @@ export const AboutModal: React.FC = () => {
                     <span>Zero-Persistence Security</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    100% ephemeral in-memory storage. No databases, no localStorage, no cookies, and no tracking. Closing the browser tab destroys all credentials.
+                    100% ephemeral in-memory storage. No databases, no localStorage, no cookies, and no tracking. Closing the browser tab permanently destroys all credentials.
                   </p>
                 </div>
 
@@ -156,50 +181,121 @@ export const AboutModal: React.FC = () => {
                     <span>Instant Pattern Detection</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    Heuristic regex engine identifies API key prefixes (<code className="text-neutral-300">gsk_</code>, <code className="text-neutral-300">nvapi-</code>, <code className="text-neutral-300">AIzaSy</code>, <code className="text-neutral-300">sk-ant-</code>) in real-time.
+                    Heuristic regex engine identifies API key prefixes (<code className="text-neutral-300">xpl_</code>, <code className="text-neutral-300">gsk_</code>, <code className="text-neutral-300">nvapi-</code>, <code className="text-neutral-300">AIzaSy</code>, <code className="text-neutral-300">sk-ant-</code>) with deterministic high-confidence resolution.
                   </p>
                 </div>
 
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
-                  <div className="flex items-center gap-2 text-purple-400 font-medium">
-                    <Radio className="w-4 h-4" />
-                    <span>Adaptive Dual Transport</span>
+                  <div className="flex items-center gap-2 text-yellow-400 font-medium">
+                    <Cpu className="w-4 h-4" />
+                    <span>Pyodide Wasm Sandbox</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    Direct browser fetch for open CORS providers (Groq, OpenRouter) with transparent stateless proxy fallback for enterprise APIs (NVIDIA NIM, OpenAI).
+                    Client-side WebAssembly Python 3 worker with in-memory virtual filesystem (MEMFS) and automated binary file extraction (<code className="text-neutral-300">.docx</code>, <code className="text-neutral-300">.xlsx</code>, <code className="text-neutral-300">.pdf</code>, <code className="text-neutral-300">.png</code>).
                   </p>
                 </div>
 
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
-                  <div className="flex items-center gap-2 text-amber-400 font-medium">
-                    <Mic className="w-4 h-4" />
-                    <span>Speech-to-Text Dictation</span>
+                  <div className="flex items-center gap-2 text-cyan-400 font-medium">
+                    <Eye className="w-4 h-4" />
+                    <span>Right-Side Preview Drawer ("Sider")</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    Native browser Web Speech API integration for hands-free voice input with real-time interim streaming transcription.
+                    Instant, zero-software previewing of chat artifacts: Word docs (Mammoth.js), Excel sheets with multi-sheet tabs (SheetJS), PDFs, interactive HTML iframes, and zoomable images.
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
-                <div className="flex items-center gap-2 text-cyan-400 font-medium">
-                  <Terminal className="w-4 h-4" />
-                  <span>Developer Mode & HTTP Inspector</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-2 text-purple-400 font-medium">
+                    <Bot className="w-4 h-4" />
+                    <span>Autonomous ReAct Agent Loop</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-normal">
+                    Models supporting function calling automatically run scripts via <code className="text-neutral-300">execute_python</code>, inspect execution outputs, and self-verify results before concluding.
+                  </p>
                 </div>
-                <p className="text-[11px] text-neutral-400 leading-normal">
-                  Click <strong className="text-neutral-200">&gt;_ Dev Mode</strong> to inspect live raw HTTP request headers (with secrets masked), JSON payloads, upstream response headers, token generation rates, and first-token latency timers.
+
+                <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-2 text-rose-400 font-medium">
+                    <Brain className="w-4 h-4" />
+                    <span>Reasoning & Thinking Streams</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-normal">
+                    Dedicated collapsible reasoning drawers for DeepSeek-R1, Cerebras, Nemotron, and OpenAI o-series models parsing <code className="text-neutral-300">&lt;think&gt;</code> tags and reasoning deltas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: FEATURES */}
+          {activeTab === 'features' && (
+            <div className="space-y-3 animate-fade-in">
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                  <Cpu className="w-4 h-4" />
+                  <span className="text-xs text-white">Client-Side WebAssembly Python Sandbox</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Executes Python 3 entirely within your browser using Pyodide compiled to WebAssembly. Includes an isolated Web Worker runner with lazy-loading, timeout protection (30s), stdout/stderr capture, and an in-memory virtual filesystem (MEMFS).
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['python-docx', 'openpyxl', 'pandas', 'matplotlib', 'reportlab', 'sympy', 'pydantic'].map((pkg) => (
+                    <span key={pkg} className="px-2 py-0.5 text-[10px] font-mono bg-[#1D1D22] text-neutral-300 border border-[#2A2A32] rounded">
+                      {pkg}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-cyan-400 font-medium">
+                  <Eye className="w-4 h-4" />
+                  <span className="text-xs text-white">Right-Side File Preview Drawer ("Sider")</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Clicking any generated file or artifact opens the full-height slide-over drawer on the right side:
+                </p>
+                <ul className="text-[11px] text-neutral-400 space-y-1 list-disc pl-4">
+                  <li><strong className="text-neutral-200">Word Documents (.docx)</strong>: Styled paper layout via Mammoth.js with tables, headings, and images.</li>
+                  <li><strong className="text-neutral-200">Excel Spreadsheets (.xlsx, .csv)</strong>: Multi-sheet tabs (Sheet1, Sheet2), cell filtering, search, and gridlines.</li>
+                  <li><strong className="text-neutral-200">PDF Documents (.pdf)</strong>: Embedded browser PDF viewer with zoom and page controls.</li>
+                  <li><strong className="text-neutral-200">HTML (.html)</strong>: Dual view toggle between sandboxed visual iframe preview and syntax-highlighted source code.</li>
+                  <li><strong className="text-neutral-200">Images (.png, .jpg, .svg)</strong>: Canvas view with Zoom In (+), Zoom Out (-), Reset, and download actions.</li>
+                </ul>
+              </div>
+
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-amber-400 font-medium">
+                  <Mic className="w-4 h-4" />
+                  <span className="text-xs text-white">Voice Input & Speech-to-Text</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Built-in Web Speech API microphone dictation with real-time audio pulsing visualization, interim streaming transcription, and automatic text concatenation.
+                </p>
+              </div>
+
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-green-400 font-medium">
+                  <Terminal className="w-4 h-4" />
+                  <span className="text-xs text-white">Developer Mode & Live HTTP Inspector</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Toggle <strong className="text-neutral-200">&gt;_ Dev Mode</strong> to inspect live raw HTTP request headers (secrets safely masked), JSON payloads, upstream response headers, token generation rates, and first-token latency timers.
                 </p>
               </div>
             </div>
           )}
 
-          {/* TAB 2: ARCHITECTURE */}
+          {/* TAB 3: ARCHITECTURE */}
           {activeTab === 'architecture' && (
             <div className="space-y-4 animate-fade-in">
               <div className="p-3.5 bg-[#17171B] border border-[#26262D] rounded-xl space-y-2">
-                <p className="text-sm font-medium text-white">Network Flow & Strategy Resolution</p>
+                <p className="text-sm font-medium text-white">Full Autonomous Architecture Flow</p>
                 <p className="text-neutral-400 text-[11px] leading-relaxed">
-                  ARH separates key detection, connection strategy resolution, and transport execution into distinct architectural layers:
+                  ARH separates key detection, connection strategy resolution, autonomous tool calling, and sandbox execution into distinct decoupled layers:
                 </p>
                 <div className="p-2.5 bg-[#0C0C0E] border border-[#1F1F24] rounded-lg font-mono text-[10px] text-neutral-300 overflow-x-auto">
                   <pre>{`User Pastes API Key
@@ -207,17 +303,26 @@ export const AboutModal: React.FC = () => {
 Regex Heuristic Engine (Detects Provider & Confidence)
         ↓
 Connection Strategy Resolver
-   ├── CORS Supported  ──► Direct Browser Transport (Groq, OpenRouter, Cerebras)
-   └── CORS Restricted ──► Stateless Relay/Proxy (NVIDIA NIM, OpenAI, DeepSeek)
+   ├── CORS Supported  ──► Direct Browser Transport (Groq, OpenRouter, Cerebras, xAI)
+   └── CORS Restricted ──► SSRF-Hardened Edge Proxy (NVIDIA NIM, OpenAI, DeepSeek)
         ↓
-Lightweight Dry Auth Probe & Live Model Discovery (/models)
+Dry Auth Probe & Live Model Discovery (/models)
         ↓
-Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre>
+Real-Time SSE Streaming Chat
+        ↓
+Autonomous Tool Call / Code Detection (execute_python)
+        ↓
+Pyodide WebAssembly Virtual Worker (MEMFS)
+        ↓
+Binary File Extraction (Blob URLs) & ReAct Verification Loop
+        ↓
+Right-Side Interactive File Previewer (PDF, Word, Excel, HTML, Images)`}</pre>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-white">Transport Modes Explained</p>
+                <p className="text-xs font-medium text-white">Transport & Execution Modes</p>
+                
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1">
                   <div className="flex items-center gap-2 text-emerald-400 font-medium text-xs">
                     <Globe className="w-3.5 h-3.5" />
@@ -231,55 +336,75 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1">
                   <div className="flex items-center gap-2 text-purple-400 font-medium text-xs">
                     <Lock className="w-3.5 h-3.5" />
-                    <span>Stateless Proxy Fallback (Vite & Vercel Edge)</span>
+                    <span>SSRF-Hardened Edge Proxy Fallback</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    Enterprise providers (such as NVIDIA NIM) block direct browser requests using CORS (<code className="text-neutral-300">access-control-allow-origin: null</code>). ARH automatically routes these requests through a stateless Edge proxy that forwards raw bytes without logging or caching.
+                    Enterprise providers (like NVIDIA NIM and OpenAI) block direct browser requests using CORS. ARH automatically routes these calls through a hardened Edge proxy equipped with strict host allowlisting and internal private IP rejection.
+                  </p>
+                </div>
+
+                <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1">
+                  <div className="flex items-center gap-2 text-yellow-400 font-medium text-xs">
+                    <Cpu className="w-3.5 h-3.5" />
+                    <span>In-Browser Web Worker Sandbox</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-normal">
+                    Code execution takes place inside a dedicated Web Worker running WebAssembly Python 3. The main UI thread remains responsive at 60 FPS while heavy computations or document generations run in the background.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 3: PROVIDERS */}
+          {/* TAB 4: PROVIDERS */}
           {activeTab === 'providers' && (
             <div className="space-y-3 animate-fade-in">
               <p className="text-xs text-neutral-400">
                 ARH includes standardized adapters and live model discovery for {PROVIDER_CATALOG.length} industry AI providers:
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1">
-                {PROVIDER_CATALOG.map((provider) => (
-                  <div 
-                    key={provider.id}
-                    className="p-2.5 bg-[#151518] border border-[#232328] hover:border-[#2F2F36] rounded-xl transition-all space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-white text-xs">{provider.name}</span>
-                      <span className={`px-1.5 py-0.5 text-[9px] font-mono rounded ${
-                        provider.connectionMode === 'DIRECT' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : provider.connectionMode === 'DIRECT_WITH_WARNING'
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                      }`}>
-                        {provider.connectionMode === 'DIRECT' ? 'Direct' : provider.connectionMode === 'DIRECT_WITH_WARNING' ? 'Direct*' : 'Proxy'}
-                      </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
+                {PROVIDER_CATALOG.map((provider) => {
+                  let badgeText = 'Direct';
+                  let badgeStyle = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                  
+                  if (provider.connectionMode === 'DIRECT_WITH_WARNING') {
+                    badgeText = 'Direct*';
+                    badgeStyle = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                  } else if (provider.connectionMode === 'RELAY_REQUIRED') {
+                    badgeText = 'Proxy';
+                    badgeStyle = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+                  } else if (provider.connectionMode === 'UNKNOWN') {
+                    badgeText = 'Direct / Proxy';
+                    badgeStyle = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                  }
+
+                  return (
+                    <div 
+                      key={provider.id}
+                      className="p-2.5 bg-[#151518] border border-[#232328] hover:border-[#2F2F36] rounded-xl transition-all space-y-1"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-white text-xs">{provider.name}</span>
+                        <span className={`px-1.5 py-0.5 text-[9px] font-mono rounded border ${badgeStyle}`}>
+                          {badgeText}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-neutral-400 line-clamp-1">
+                        {provider.description || provider.name}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-0.5">
+                        <span className="truncate max-w-[150px]">Default: {provider.defaultModelId?.split('/').pop() || 'Dynamic'}</span>
+                        <span className="text-neutral-400 font-mono text-[9px]">{provider.adapterType}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-neutral-400 line-clamp-1">
-                      {provider.description || provider.name}
-                    </p>
-                    <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-0.5">
-                      <span>Default: {provider.defaultModelId?.split('/').pop() || 'Dynamic'}</span>
-                      <span className="text-neutral-400">{provider.adapterType}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* TAB 4: TECH SPECS & CREDITS */}
+          {/* TAB 5: TECH SPECS */}
           {activeTab === 'specs' && (
             <div className="space-y-4 animate-fade-in">
               <div className="p-3.5 bg-[#17171B] border border-[#26262D] rounded-xl space-y-2.5">
@@ -298,6 +423,14 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
                     <span className="text-neutral-200 font-medium">Vite 8</span>
                   </div>
                   <div className="p-2 bg-[#121214] border border-[#212126] rounded-lg">
+                    <span className="text-neutral-500 block text-[10px]">Sandbox Runtime</span>
+                    <span className="text-neutral-200 font-medium">Pyodide Wasm</span>
+                  </div>
+                  <div className="p-2 bg-[#121214] border border-[#212126] rounded-lg">
+                    <span className="text-neutral-500 block text-[10px]">Document Parsers</span>
+                    <span className="text-neutral-200 font-medium">Mammoth & SheetJS</span>
+                  </div>
+                  <div className="p-2 bg-[#121214] border border-[#212126] rounded-lg">
                     <span className="text-neutral-500 block text-[10px]">Styling</span>
                     <span className="text-neutral-200 font-medium">Tailwind CSS</span>
                   </div>
@@ -309,6 +442,10 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
                     <span className="text-neutral-500 block text-[10px]">Deployment</span>
                     <span className="text-neutral-200 font-medium">Vercel Edge</span>
                   </div>
+                  <div className="p-2 bg-[#121214] border border-[#212126] rounded-lg">
+                    <span className="text-neutral-500 block text-[10px]">Speech Recognition</span>
+                    <span className="text-neutral-200 font-medium">Web Speech API</span>
+                  </div>
                 </div>
               </div>
 
@@ -316,10 +453,10 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
                 <p className="text-sm font-medium text-white">Testing & Reliability</p>
                 <div className="flex items-center gap-2 text-emerald-400 text-xs">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>130 Automated Tests Passing</span>
+                  <span>210 Automated Tests Passing (100%)</span>
                 </div>
                 <p className="text-[11px] text-neutral-400 leading-normal">
-                  Comprehensive test coverage spanning provider detection heuristics, adapter payload normalization, SSE chunk parsing, error code categorization, and connection strategy resolution.
+                  Comprehensive test suites covering Provider Detection Heuristics, OpenAI / Gemini / Anthropic / Experiential Adapters, Error Normalization, SSE Stream & Thinking Parser, Transport Truth Model, Python Code Detector, and Autonomous ReAct Harness.
                 </p>
               </div>
 
@@ -332,7 +469,7 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
                   href="https://github.com/aruchith08/api-key-tester-chatbot"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202026] hover:bg-[#2A2A32] text-white border border-[#2F2F37] rounded-lg text-xs font-medium transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202026] hover:bg-[#2A2A32] text-white border border-[#2F2F37] rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                   <GitHubIcon className="w-3.5 h-3.5" />
                   <span>GitHub</span>
@@ -345,7 +482,7 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
 
         {/* Footer info bar */}
         <div className="pt-3 mt-2 border-t border-[#202025] flex items-center justify-between text-[11px] text-neutral-500">
-          <span>ARH · AI API Testing Ground</span>
+          <span>ARH · AI API Testing Ground & Sandbox</span>
           <span>Crafted by <strong className="text-neutral-300">Ruchith</strong></span>
         </div>
       </div>
