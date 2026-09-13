@@ -12,6 +12,11 @@
 [![Vercel](https://img.shields.io/badge/Vercel-Deployable-black?style=flat-square&logo=vercel)](https://vercel.com/)
 [![Security](https://img.shields.io/badge/storage-zero%20persistence-green?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 
+<br />
+<br />
+
+![ARH Interface Screenshot](./screenshot.png)
+
 </div>
 
 ---
