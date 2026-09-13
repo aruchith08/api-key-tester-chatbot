@@ -137,6 +137,17 @@ export class ProviderDetector {
       };
     }
 
+    // Experiential Labs (xpl_ followed by 40 hex chars or generic xpl_ prefix)
+    if (/^xpl_[a-f0-9]{40}$/i.test(key) || key.startsWith('xpl_') || /^xpl_[a-zA-Z0-9_-]{10,}$/.test(key)) {
+      const experiential = PROVIDER_DEFINITIONS.find(p => p.id === 'experiential')!;
+      return {
+        provider: experiential,
+        confidence: 'high',
+        candidates: [experiential],
+        details: 'Recognized unique Experiential Labs key signature (xpl_...)'
+      };
+    }
+
     // 3. DeepSeek (sk- followed by 32 hex chars)
     if (/^sk-[a-f0-9]{32}$/.test(key)) {
       const deepseek = PROVIDER_DEFINITIONS.find(p => p.id === 'deepseek')!;

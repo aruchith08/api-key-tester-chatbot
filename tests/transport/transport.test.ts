@@ -71,7 +71,7 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
 
   // 4. Provider Truth Model Integrity
   console.log('\n--- Provider Truth Model Integrity ---');
-  assert(PROVIDER_CATALOG.length === 18, `Catalog contains all 18 providers (found ${PROVIDER_CATALOG.length})`);
+  assert(PROVIDER_CATALOG.length === 19, `Catalog contains all 19 providers (found ${PROVIDER_CATALOG.length})`);
 
   let allHaveTruth = true;
   let noFalselyClaimed = true;
@@ -92,7 +92,7 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
     }
   }
 
-  assert(allHaveTruth, 'All 18 providers have strongly-typed truth model metadata');
+  assert(allHaveTruth, 'All 19 providers have strongly-typed truth model metadata');
   assert(noFalselyClaimed, 'Zero providers falsely claim CONFIRMED or BROWSER_VERIFIED without live test');
   assert(allNotTested, 'All providers start honestly at realApi: NOT_TESTED');
 }

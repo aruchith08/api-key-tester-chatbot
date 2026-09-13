@@ -135,7 +135,7 @@ export const AboutModal: React.FC = () => {
               <div className="p-3.5 bg-[#17171B] border border-[#26262D] rounded-xl leading-relaxed">
                 <p className="text-sm font-medium text-white mb-1.5">What is ARH?</p>
                 <p className="text-neutral-300">
-                  <strong className="text-neutral-100">ARH (API Testing Ground)</strong> is a developer-first AI playground built to test, benchmark, and chat with foundation models across 18+ AI providers instantly without managing multiple SDKs, backend databases, or complex configurations.
+                  <strong className="text-neutral-100">ARH (API Testing Ground)</strong> is a developer-first AI playground built to test, benchmark, and chat with foundation models across 19+ AI providers instantly without managing multiple SDKs, backend databases, or complex configurations.
                 </p>
               </div>
 
@@ -245,7 +245,7 @@ Universal SSE Streaming Normalizer ──► Live Token Stream in Chat UI`}</pre
           {activeTab === 'providers' && (
             <div className="space-y-3 animate-fade-in">
               <p className="text-xs text-neutral-400">
-                ARH includes standardized adapters and live model discovery for 18 industry AI providers:
+                ARH includes standardized adapters and live model discovery for {PROVIDER_CATALOG.length} industry AI providers:
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1">

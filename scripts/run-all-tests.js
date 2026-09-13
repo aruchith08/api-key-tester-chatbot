@@ -54,6 +54,9 @@ async function main() {
     const { runAnthropicAdapterTests } = await server.ssrLoadModule('./tests/adapters/anthropic.test.ts');
     await runAnthropicAdapterTests(server, assert);
 
+    const { runExperientialAdapterTests } = await server.ssrLoadModule('./tests/adapters/experiential.test.ts');
+    await runExperientialAdapterTests(server, assert);
+
     // 3. Normalization suite
     const { runErrorNormalizationTests } = await server.ssrLoadModule('./tests/normalization/errors.test.ts');
     await runErrorNormalizationTests(server, assert);

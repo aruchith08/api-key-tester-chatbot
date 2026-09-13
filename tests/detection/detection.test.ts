@@ -43,6 +43,10 @@ export async function runDetectionTests(server: any, assert: (cond: boolean, msg
   const hfRes = ProviderDetector.detect(hfKey);
   assert(hfRes.confidence === 'high' && hfRes.provider?.id === 'huggingface', 'Hugging Face key (hf_) detected with high confidence');
 
+  const xplKey = 'xpl_' + '0123456789abcdef'.repeat(2) + '01234567';
+  const xplRes = ProviderDetector.detect(xplKey);
+  assert(xplRes.confidence === 'high' && xplRes.provider?.id === 'experiential', 'Experiential Labs key (xpl_) detected with high confidence');
+
   // 2. Medium confidence heuristic signatures
   const deepseekKey = 'sk-' + '1234567890abcdef1234567890abcdef';
   const dsRes = ProviderDetector.detect(deepseekKey);

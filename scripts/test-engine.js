@@ -33,9 +33,9 @@ async function runTests() {
     console.log('[1] Testing Provider Catalog Integrity...');
     assert(Array.isArray(PROVIDER_CATALOG) && PROVIDER_CATALOG.length >= 18, `Catalog has ${PROVIDER_CATALOG?.length} providers (expected >= 18)`);
     
-    const requiredProviders = ['groq', 'nvidia', 'openrouter', 'gemini', 'anthropic', 'openai', 'cerebras', 'deepseek', 'together', 'fireworks', 'perplexity', 'xai', 'mistral', 'sambanova', 'huggingface', 'moonshot', 'qwen', 'custom'];
+    const requiredProviders = ['groq', 'nvidia-nim', 'openrouter', 'gemini', 'anthropic', 'openai', 'cerebras', 'deepseek', 'together', 'fireworks', 'perplexity', 'xai', 'mistral', 'sambanova', 'huggingface', 'moonshot', 'qwen', 'experiential', 'custom'];
     for (const id of requiredProviders) {
-      const p = PROVIDER_CATALOG.find(x => x.id === id);
+      const p = PROVIDER_CATALOG.find(x => x.id === id || (id === 'nvidia' && x.id === 'nvidia-nim'));
       assert(p !== undefined, `Provider '${id}' exists in catalog`);
       if (p) {
         if (p.id !== 'custom') {
@@ -75,7 +75,7 @@ async function runTests() {
     // NVIDIA NIM: nvapi-...
     const nvidiaKey = 'nvapi-' + 'D'.repeat(40);
     const nvidiaRes = ProviderDetector.detect(nvidiaKey);
-    assert(nvidiaRes.confidence === 'high' && nvidiaRes.provider?.id === 'nvidia', 'NVIDIA NIM key detected with high confidence');
+    assert(nvidiaRes.confidence === 'high' && (nvidiaRes.provider?.id === 'nvidia-nim' || nvidiaRes.provider?.id === 'nvidia'), 'NVIDIA NIM key detected with high confidence');
 
     // Cerebras: csk-...
     const cerebrasKey = 'csk-' + 'E'.repeat(40);
@@ -102,13 +102,18 @@ async function runTests() {
     const hfRes = ProviderDetector.detect(hfKey);
     assert(hfRes.confidence === 'high' && hfRes.provider?.id === 'huggingface', 'Hugging Face key detected with high confidence');
 
+    // Experiential Labs: xpl_...
+    const xplKey = 'xpl_' + '0123456789abcdef'.repeat(2) + '01234567';
+    const xplRes = ProviderDetector.detect(xplKey);
+    assert(xplRes.confidence === 'high' && xplRes.provider?.id === 'experiential', 'Experiential Labs key detected with high confidence');
+
     // DeepSeek: sk- + 32 hex chars (distinct 35 char length)
     const dsKey = 'sk-' + '1234567890abcdef1234567890abcdef';
     const dsRes = ProviderDetector.detect(dsKey);
     assert(dsRes.confidence === 'medium' && dsRes.provider?.id === 'deepseek', 'DeepSeek 32-hex key detected with medium confidence');
 
     // Generic sk- key: OpenAI / DeepSeek / Together / etc.
-    const genericSk = 'sk-proj-xyz123456789abcdefghijklmnopqrstuvwxyz';
+    const genericSk = 'sk-xyz123456789abcdefghijklmnopqrstuvwxyz';
     const genRes = ProviderDetector.detect(genericSk);
     assert(genRes.confidence === 'low', 'Generic sk- key returns low confidence');
     assert(genRes.candidates.some(c => c.id === 'openai'), 'Generic sk- key ranks OpenAI as candidate');

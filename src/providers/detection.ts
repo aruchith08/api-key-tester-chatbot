@@ -168,6 +168,19 @@ export class ProviderDetector {
       };
     }
 
+    // Experiential Labs: distinct prefix 'xpl_'
+    if (key.startsWith('xpl_') || /^xpl_[a-f0-9]{40}$/i.test(key) || /^xpl_[a-zA-Z0-9_-]+$/.test(key)) {
+      const experiential = PROVIDER_CATALOG.find(p => p.id === 'experiential')!;
+      return {
+        providerId: 'experiential',
+        provider: experiential,
+        confidence: 'high',
+        candidates: [experiential],
+        rationale: 'Recognized distinct Experiential Labs API key prefix (xpl_).',
+        reason: 'Recognized distinct Experiential Labs API key prefix (xpl_).'
+      };
+    }
+
     // =========================================================================
     // 2. Stage 2: Medium Confidence Heuristics
     // =========================================================================

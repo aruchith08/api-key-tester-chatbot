@@ -2,9 +2,9 @@
 
 # ⚡ ARH — AI API Testing Ground & Agent Sandbox
 
-**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 18+ AI providers instantly.**
+**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 19+ AI providers instantly.**
 
-[![Tests](https://img.shields.io/badge/tests-186%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
+[![Tests](https://img.shields.io/badge/tests-210%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-cyan?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?style=flat-square&logo=vite)](https://vitejs.dev/)
@@ -20,14 +20,14 @@
 
 **ARH (API Testing Ground & Agent Sandbox)** is a developer-first AI playground designed to test API keys across any major foundation model provider without setup friction, backend databases, or complex configurations. 
 
-Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
+Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Experiential Labs, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
 
 ---
 
 ## 🚀 Key Capabilities & Features
 
 ### 1. 🔍 Instant Key Pattern Detection
-- Heuristic regex engine identifies distinct key signatures in real-time as you type or paste (`gsk_` for Groq, `nvapi-` for NVIDIA NIM, `AIzaSy` for Google Gemini, `sk-ant-` for Anthropic, `sk-or-` for OpenRouter, `sk-proj-` for OpenAI, etc.).
+- Heuristic regex engine identifies distinct key signatures in real-time as you type or paste (`xpl_` for Experiential Labs, `gsk_` for Groq, `nvapi-` for NVIDIA NIM, `AIzaSy` for Google Gemini, `sk-ant-` for Anthropic, `sk-or-` for OpenRouter, `sk-proj-` for OpenAI, etc.).
 - Categorizes confidence levels (`high`, `medium`, `low`) with transparent rationale and multi-candidate manual selection for ambiguous keys.
 
 ### 2. 🤖 Autonomous Agent Mode (In-Flight Tool Calling Loop)
@@ -76,7 +76,7 @@ Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, O
 
 ## 🧠 Supported Providers Matrix
 
-ARH includes built-in adapters and model normalization for 18 industry providers:
+ARH includes built-in adapters and model normalization for 19 industry providers:
 
 | Provider | Key Signature | Connection Mode | Dynamic Models | Live Streaming | Tool Calling / Agent |
 | :--- | :--- | :--- | :---: | :---: | :---: |
@@ -90,6 +90,7 @@ ARH includes built-in adapters and model normalization for 18 industry providers
 | **Together AI** | `64-hex key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Fireworks AI** | `fw_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Cerebras** | `csk-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Experiential Labs** | `xpl_...` (40 hex) | Direct / Proxy | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Perplexity AI** | `pplx-...` | Proxy Fallback (CORS) | ✅ Fallback | ✅ Yes | ✅ Fallback |
 | **xAI (Grok)** | `xai-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Mistral AI** | `32-char key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |

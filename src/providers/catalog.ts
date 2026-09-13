@@ -857,6 +857,66 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     }
   },
   {
+    id: 'experiential',
+    name: 'Experiential Labs',
+    description: 'Unified AI gateway providing high-speed access to frontier and open-source models',
+    keyPatterns: [/^xpl_[a-f0-9]{40}$/i, /^xpl_[a-zA-Z0-9_-]{10,}$/],
+    adapterType: 'openai-compatible',
+    baseUrl: 'https://api.experientiallabs.ai/v1',
+    chatEndpoint: '/chat/completions',
+    modelsEndpoint: '/models',
+    documentationUrl: 'https://platform.experientiallabs.ai/docs',
+    authHeader: 'Authorization',
+    authPrefix: 'Bearer',
+    defaultModelId: 'meta-llama/llama-3.3-70b-instruct',
+    tier: 2,
+    
+    connectionMode: 'UNKNOWN',
+    browserCompatibility: 'UNKNOWN',
+    corsStatus: 'UNKNOWN',
+    recommendedTransport: 'DIRECT',
+    truth: {
+      "implementation": "IMPLEMENTED",
+      "unitTests": "PASSED",
+      "realApi": "NOT_TESTED",
+      "browser": "UNVERIFIED",
+      "transport": "DIRECT_READY",
+      "corsStatus": "UNKNOWN"
+    },
+    fallbackModels: [
+      {
+        id: 'meta-llama/llama-3.3-70b-instruct',
+        name: 'Llama 3.3 70B Instruct',
+        provider: 'Experiential Labs',
+        contextWindow: 128000,
+        isDefault: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'deepseek/deepseek-chat',
+        name: 'DeepSeek Chat (V3)',
+        provider: 'Experiential Labs',
+        contextWindow: 64000,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'qwen/qwen-2.5-72b-instruct',
+        name: 'Qwen 2.5 72B Instruct',
+        provider: 'Experiential Labs',
+        contextWindow: 32768,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      }
+    ],
+    capabilities: {
+      text: true,
+      streaming: true,
+      vision: true,
+      tools: true,
+      json: true,
+      fileInput: false
+    }
+  },
+  {
     id: 'custom',
     name: 'Custom Provider',
     description: 'Connect to any OpenAI-compatible API, local proxy, Ollama, or vLLM server',
