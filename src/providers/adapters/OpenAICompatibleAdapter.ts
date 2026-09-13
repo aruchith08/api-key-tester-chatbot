@@ -399,19 +399,25 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
                 finishReason = data.choices[0].finish_reason;
               }
 
-              // Handle both standard content delta and reasoning_content (DeepSeek-R1, Cerebras, etc.)
+              // Handle reasoning_content (DeepSeek-R1, Cerebras, etc.) and standard content delta separately
               const deltaContent = data.choices?.[0]?.delta?.content;
-              const deltaReasoning = data.choices?.[0]?.delta?.reasoning_content;
-              const delta = deltaContent || deltaReasoning || '';
+              const deltaReasoning = data.choices?.[0]?.delta?.reasoning_content || data.choices?.[0]?.delta?.reasoning;
 
-              if (delta) {
+              if (deltaReasoning) {
+                yield {
+                  type: 'thinking',
+                  content: deltaReasoning
+                };
+              }
+
+              if (deltaContent) {
                 if (firstTokenTime === null) {
                   firstTokenTime = Date.now();
                 }
-                fullText += delta;
+                fullText += deltaContent;
                 yield {
                   type: 'token',
-                  content: delta
+                  content: deltaContent
                 };
               }
             } catch (err) {

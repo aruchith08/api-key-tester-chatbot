@@ -148,6 +148,10 @@ export type StreamEvent =
       content: string;
     }
   | {
+      type: 'thinking';
+      content: string;
+    }
+  | {
       type: 'usage';
       inputTokens?: number;
       outputTokens?: number;

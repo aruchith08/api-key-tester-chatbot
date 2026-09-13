@@ -49,6 +49,7 @@ export function useChat() {
 
     let tokenCount = 0;
     let accumulated = '';
+    let accumulatedThinking = '';
     let finalMetrics: any = null;
 
     try {
@@ -80,7 +81,16 @@ export function useChat() {
             useAppStore.getState().setChatState('streaming');
           }
           accumulated += event.content;
-          updateAssistantMessage(assistantMsgId, accumulated, true);
+          updateAssistantMessage(assistantMsgId, accumulated, true, finalMetrics, accumulatedThinking);
+        } else if (event.type === 'thinking') {
+          if (tokenCount === 0) {
+            updateVerificationStage('streaming', { status: 'RUNNING', details: 'Receiving reasoning stream' });
+          }
+          if (useAppStore.getState().chatState !== 'streaming') {
+            useAppStore.getState().setChatState('streaming');
+          }
+          accumulatedThinking += event.content;
+          updateAssistantMessage(assistantMsgId, accumulated, true, finalMetrics, accumulatedThinking);
         } else if (event.type === 'usage') {
           if (finalMetrics) {
             finalMetrics.inputTokens = event.inputTokens ?? finalMetrics.inputTokens;
@@ -92,8 +102,8 @@ export function useChat() {
           finalMetrics = event.metrics || finalMetrics;
         } else if (event.type === 'error') {
           if (controller.signal.aborted) {
-            if (accumulated) {
-              updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics);
+            if (accumulated || accumulatedThinking) {
+              updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics, accumulatedThinking);
               updateVerificationStage('stopGeneration', {
                 status: 'PASSED',
                 durationMs: Date.now() - chatStartTime,
@@ -128,7 +138,7 @@ export function useChat() {
         }
       }
 
-      updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics);
+      updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics, accumulatedThinking);
       setGenerating(false, null);
       useAppStore.getState().setChatState('idle');
 
@@ -151,8 +161,8 @@ export function useChat() {
     } catch (err: any) {
       if (err.name === 'AbortError' || controller.signal.aborted) {
         // Graceful user cancellation
-        if (accumulated) {
-          updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics);
+        if (accumulated || accumulatedThinking) {
+          updateAssistantMessage(assistantMsgId, accumulated, false, finalMetrics, accumulatedThinking);
           updateVerificationStage('stopGeneration', {
             status: 'PASSED',
             durationMs: Date.now() - chatStartTime,

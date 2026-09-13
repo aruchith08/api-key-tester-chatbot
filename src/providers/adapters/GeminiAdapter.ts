@@ -267,17 +267,22 @@ export class GeminiAdapter implements AIProviderAdapter {
             }
 
             const parts = candidate?.content?.parts || [];
-            const textChunk = parts.map((p: any) => p.text || '').join('');
-
-            if (textChunk) {
-              if (firstTokenTime === null) {
-                firstTokenTime = Date.now();
+            for (const p of parts) {
+              if (p.thought && p.text) {
+                yield {
+                  type: 'thinking',
+                  content: p.text
+                };
+              } else if (p.text) {
+                if (firstTokenTime === null) {
+                  firstTokenTime = Date.now();
+                }
+                fullText += p.text;
+                yield {
+                  type: 'token',
+                  content: p.text
+                };
               }
-              fullText += textChunk;
-              yield {
-                type: 'token',
-                content: textChunk
-              };
             }
           } catch (e) {
             // Ignore unparseable SSE line

@@ -4,6 +4,8 @@ import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../../types/chat';
 import { useAppStore } from '../../store/appStore';
 import { CodeBlock } from './CodeBlock';
+import { ThinkingBlock } from './ThinkingBlock';
+import { parseThinking } from '../../utils/thinkingParser';
 import { Copy, Check, AlertCircle, FileText } from 'lucide-react';
 
 interface ChatMessageProps {
@@ -21,9 +23,12 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
 
+  // Parse thinking and output separately
+  const { thinking, content, isThinking } = parseThinking(message.content, message.thinking);
+
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      await navigator.clipboard.writeText(content || message.content);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
@@ -95,53 +100,66 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
             </div>
           ) : (
             <div className="relative group w-full text-neutral-200 text-sm sm:text-base leading-relaxed">
+              {/* Separate Thinking Section */}
+              <ThinkingBlock
+                thinking={thinking}
+                isThinking={isThinking}
+                isStreaming={message.isStreaming}
+              />
+
               {/* Markdown Rendered Content */}
-              <div className="prose prose-invert max-w-none prose-p:my-2 prose-pre:my-0 prose-pre:bg-transparent prose-pre:p-0 prose-headings:font-normal prose-headings:text-neutral-100 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-blockquote:border-l-neutral-700 prose-blockquote:text-neutral-400">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    code({ className, children, ...props }) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      const isInline = !match && !String(children).includes('\n');
-                      if (isInline) {
+              {content ? (
+                <div className="prose prose-invert max-w-none prose-p:my-2 prose-pre:my-0 prose-pre:bg-transparent prose-pre:p-0 prose-headings:font-normal prose-headings:text-neutral-100 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-blockquote:border-l-neutral-700 prose-blockquote:text-neutral-400">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code({ className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const isInline = !match && !String(children).includes('\n');
+                        if (isInline) {
+                          return (
+                            <code className="bg-[#1C1C20] text-emerald-300 px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>
+                              {children}
+                            </code>
+                          );
+                        }
                         return (
-                          <code className="bg-[#1C1C20] text-emerald-300 px-1.5 py-0.5 rounded text-[13px] font-mono" {...props}>
+                          <CodeBlock
+                            language={match ? match[1] : 'text'}
+                            code={String(children).replace(/\n$/, '')}
+                          />
+                        );
+                      },
+                      a({ href, children }) {
+                        return (
+                          <a 
+                            href={href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
+                          >
                             {children}
-                          </code>
+                          </a>
                         );
                       }
-                      return (
-                        <CodeBlock
-                          language={match ? match[1] : 'text'}
-                          code={String(children).replace(/\n$/, '')}
-                        />
-                      );
-                    },
-                    a({ href, children }) {
-                      return (
-                        <a 
-                          href={href} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2"
-                        >
-                          {children}
-                        </a>
-                      );
-                    }
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
+                    }}
+                  >
+                    {content}
+                  </ReactMarkdown>
 
-                {/* Streaming cursor pill */}
-                {message.isStreaming && (
-                  <span className="inline-block w-2 h-4 ml-1 bg-emerald-400 animate-pulse rounded-xs align-middle" />
-                )}
-              </div>
+                  {/* Streaming cursor pill */}
+                  {message.isStreaming && !isThinking && (
+                    <span className="inline-block w-2 h-4 ml-1 bg-emerald-400 animate-pulse rounded-xs align-middle" />
+                  )}
+                </div>
+              ) : (
+                message.isStreaming && !thinking && (
+                  <span className="inline-block w-2 h-4 bg-emerald-400 animate-pulse rounded-xs align-middle" />
+                )
+              )}
 
               {/* Message Footer Controls: Copy, Metrics */}
-              {!message.isStreaming && message.content && (
+              {!message.isStreaming && (content || thinking) && (
                 <div className="flex items-center gap-3 mt-2 pt-1 text-xs text-neutral-500 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     type="button"

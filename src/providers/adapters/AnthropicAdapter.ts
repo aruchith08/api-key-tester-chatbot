@@ -311,17 +311,24 @@ export class AnthropicAdapter implements AIProviderAdapter {
               }
             }
 
-            if (data.type === 'content_block_delta' && data.delta?.text) {
-              const textChunk = data.delta.text;
-              if (firstTokenTime === null) {
-                firstTokenTime = Date.now();
-              }
+            if (data.type === 'content_block_delta') {
+              if (data.delta?.type === 'thinking_delta' && data.delta?.thinking) {
+                yield {
+                  type: 'thinking',
+                  content: data.delta.thinking
+                };
+              } else if (data.delta?.text) {
+                const textChunk = data.delta.text;
+                if (firstTokenTime === null) {
+                  firstTokenTime = Date.now();
+                }
 
-              fullText += textChunk;
-              yield {
-                type: 'token',
-                content: textChunk
-              };
+                fullText += textChunk;
+                yield {
+                  type: 'token',
+                  content: textChunk
+                };
+              }
             }
           } catch {
             // Ignore unparseable SSE line

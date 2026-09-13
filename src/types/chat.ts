@@ -10,6 +10,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  thinking?: string;
   attachments?: MessageAttachment[];
   timestamp: number;
   isStreaming?: boolean;

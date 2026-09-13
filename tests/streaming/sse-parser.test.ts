@@ -114,4 +114,33 @@ export async function runStreamingTests(server: any, assert: (cond: boolean, msg
   assert(geminiText === 'Gemini stream output', 'Gemini candidate parts text extracted');
   assert(geminiTotalTokens === 20, 'Gemini usageMetadata totalTokenCount extracted');
   assert(geminiFinishReason === 'STOP', 'Gemini finishReason STOP extracted');
+
+  // Test Thinking & Reasoning Separation
+  const { parseThinking } = await server.ssrLoadModule('./src/utils/thinkingParser.ts');
+
+  // 1. Direct thinking string
+  const parsed1 = parseThinking('Final answer text', 'Step 1: internal thoughts');
+  assert(parsed1.thinking === 'Step 1: internal thoughts', 'Direct thinking string captured properly');
+  assert(parsed1.content === 'Final answer text', 'Output content retained without alteration');
+  assert(parsed1.isThinking === false, 'isThinking is false when output content exists');
+
+  // 2. Inline <think>...</think> tags
+  const rawWithThink = '<think>\nFirst we evaluate 2 + 2.\nThe answer is 4.\n</think>\n\nHere is 4.';
+  const parsed2 = parseThinking(rawWithThink);
+  assert(parsed2.thinking === 'First we evaluate 2 + 2.\nThe answer is 4.', 'Inline <think> tags cleanly extracted into thinking');
+  assert(parsed2.content === 'Here is 4.', 'Inline <think> tags completely removed from output');
+  assert(parsed2.isThinking === false, 'Completed <think> tag sets isThinking to false');
+
+  // 3. Streaming/unclosed <think> tag
+  const streamingThink = '<think>\nEvaluating problem step 1...';
+  const parsed3 = parseThinking(streamingThink);
+  assert(parsed3.thinking === 'Evaluating problem step 1...', 'Streaming partial thoughts extracted');
+  assert(parsed3.content === '', 'Content is empty during active thinking phase');
+  assert(parsed3.isThinking === true, 'Unclosed <think> tag flags isThinking as true');
+
+  // 4. Standard content without thinking
+  const normalText = 'Hello there, how can I help you today?';
+  const parsed4 = parseThinking(normalText);
+  assert(parsed4.thinking === '', 'Non-reasoning model produces empty thinking');
+  assert(parsed4.content === normalText, 'Standard model output untouched');
 }

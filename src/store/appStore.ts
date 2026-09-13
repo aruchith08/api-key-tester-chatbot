@@ -93,7 +93,7 @@ interface AppState {
   // Chat Actions
   addUserMessage: (content: string, attachments?: MessageAttachment[]) => string;
   addAssistantPlaceholder: () => string;
-  updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData) => void;
+  updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData, thinking?: string) => void;
   setAssistantError: (id: string, error: string) => void;
   setGenerating: (generating: boolean, controller?: AbortController | null) => void;
   stopGeneration: () => void;
@@ -229,11 +229,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     return id;
   },
   
-  updateAssistantMessage: (id, content, isStreaming = false, metrics) => {
+  updateAssistantMessage: (id, content, isStreaming = false, metrics, thinking) => {
     set((state) => ({
       messages: state.messages.map((m) => 
         m.id === id 
-          ? { ...m, content, isStreaming, ...(metrics ? { metrics } : {}) } 
+          ? { 
+              ...m, 
+              content, 
+              ...(thinking !== undefined ? { thinking } : {}),
+              isStreaming, 
+              ...(metrics ? { metrics } : {}) 
+            } 
           : m
       )
     }));
