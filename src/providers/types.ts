@@ -111,6 +111,29 @@ export interface AIModel {
     tools?: boolean;
     json?: boolean;
   };
+  // Extended model metadata (NVIDIA Build & Free Endpoint support)
+  slug?: string;
+  apiModelId?: string;
+  displayName?: string;
+  publisher?: string;
+  source?: 'dynamic' | 'catalog';
+  availability?: 'free-endpoint' | 'standard' | 'enterprise';
+  freeEndpoint?: boolean;
+  downloadable?: boolean;
+  buildUrl?: string;
+  category?: 'chat' | 'vision' | 'reasoning' | 'embedding' | 'audio' | 'translation' | 'safety' | 'autonomous-driving' | 'optimization' | 'other';
+  capabilityList?: string[];
+  inputModalities?: string[];
+  outputModalities?: string[];
+  supportsChat?: boolean;
+  supportsVision?: boolean;
+  supportsAudio?: boolean;
+  supportsVideo?: boolean;
+  supportsReasoning?: boolean;
+  supportsTools?: boolean;
+  supportsStreaming?: boolean;
+  parameterSize?: string;
+  discoveredAt?: number;
 }
 
 export interface NormalizedError {

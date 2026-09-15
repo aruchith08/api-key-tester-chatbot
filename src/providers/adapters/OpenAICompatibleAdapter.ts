@@ -5,6 +5,11 @@ import { DirectTransport } from '../transport';
 import { normalizeError } from '../error-normalizer';
 import type { ChatMessage, ToolCall } from '../../types/chat';
 import { sanitizeHeaders } from '../../utils/maskApiKey';
+import {
+  classifyNvidiaModel,
+  getCachedNvidiaModels,
+  setCachedNvidiaModels
+} from '../nvidia/nvidiaBuildCatalog';
 
 export class OpenAICompatibleAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -38,6 +43,13 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async validateConnection(apiKey: string): Promise<ConnectionResult> {
     const startTime = Date.now();
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
+      console.log(`[NVIDIA] Model discovery started`);
+    }
+
     try {
       // If the provider supports dynamic model listing, probe modelsEndpoint
       if (this.provider.modelsEndpoint) {
@@ -52,20 +64,30 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
           const models = this.normalizeModels(res.data);
           const resolvedModels = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
+          if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+            console.log(`[NVIDIA] Models discovered: ${resolvedModels.length}`);
+          }
+
           // For providers whose /models endpoint is public/unauthenticated (e.g. NVIDIA NIM),
           // perform an authenticated dry probe to ensure the key actually has chat permissions and credits.
-          if (this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim') {
+          if (isNvidia) {
             const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
+            const verifiedChatModel = resolvedModels.find(m => m.supportsChat && m.id) || resolvedModels[0];
+            const probeModelId = this.provider.defaultModelId || verifiedChatModel?.id || 'meta/llama-3.2-11b-vision-instruct';
+
             await this.transport.request({
               url: chatUrl,
               method: 'POST',
               headers: this.getHeaders(apiKey),
               body: {
-                model: this.provider.defaultModelId || resolvedModels[0]?.id || 'meta/llama-3.2-11b-vision-instruct',
+                model: probeModelId,
                 messages: [{ role: 'user', content: 'ping' }],
                 max_tokens: 1
               }
             });
+
+            // Cache models on successful validation
+            setCachedNvidiaModels(resolvedModels);
           }
 
           return {
@@ -88,7 +110,29 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
             };
           }
 
-          const norm = err.normalized || normalizeError(err, err.status);
+          let norm = err.normalized || normalizeError(err, err.status);
+          if (isNvidia) {
+            if (err.status === 401 || err.status === 403) {
+              norm = {
+                code: 'AUTH_ERROR',
+                message: 'Invalid NVIDIA API key or unauthorized access.',
+                statusCode: err.status
+              };
+            } else if (err.status === 429) {
+              norm = {
+                code: 'RATE_LIMIT',
+                message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
+                statusCode: 429
+              };
+            } else if (err.status === 404) {
+              norm = {
+                code: 'NOT_FOUND',
+                message: "Model not currently available through your NVIDIA API endpoint.",
+                statusCode: 404
+              };
+            }
+          }
+
           return {
             success: false,
             provider: this.provider.name,
@@ -179,7 +223,20 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     }
   }
 
-  public async getModels(apiKey: string): Promise<AIModel[]> {
+  public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+    if (isNvidia && !bypassCache) {
+      const cached = getCachedNvidiaModels();
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+    }
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
+      console.log(`[NVIDIA] Model discovery started`);
+    }
+
     if (!this.provider.modelsEndpoint) {
       return this.provider.fallbackModels || (this.provider.defaultModelId ? [{
         id: this.provider.defaultModelId,
@@ -199,7 +256,16 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       });
 
       const models = this.normalizeModels(res.data);
-      return models.length > 0 ? models : (this.provider.fallbackModels || []);
+      const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
+
+      if (isNvidia) {
+        if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+          console.log(`[NVIDIA] Models discovered: ${resolved.length}`);
+        }
+        setCachedNvidiaModels(resolved);
+      }
+
+      return resolved;
     } catch (err: any) {
       if (this.provider.fallbackModels && this.provider.fallbackModels.length > 0) {
         return this.provider.fallbackModels;
@@ -218,11 +284,46 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       rawList = data.models;
     }
 
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+
     const models: AIModel[] = rawList.map((item: any) => {
       const id = item.id || item.name || String(item);
       const name = item.displayName || item.name || item.id || id;
       const hasCapArray = Array.isArray(item.capabilities);
       const hasInputModalities = Array.isArray(item.architecture?.input_modalities);
+
+      if (isNvidia) {
+        const classification = classifyNvidiaModel(id, item);
+        return {
+          id,
+          apiModelId: id,
+          name: classification.displayName || name,
+          displayName: classification.displayName || name,
+          provider: this.provider.name,
+          publisher: classification.publisher,
+          category: classification.category,
+          description: item.description,
+          contextWindow: item.contextWindow || item.context_length || item.context_window || 131072,
+          isDefault: id === this.provider.defaultModelId,
+          availability: 'free-endpoint',
+          freeEndpoint: true,
+          source: 'dynamic',
+          supportsChat: classification.supportsChat,
+          supportsVision: classification.supportsVision,
+          supportsReasoning: classification.supportsReasoning,
+          parameterSize: classification.parameterSize,
+          buildUrl: classification.buildUrl,
+          capabilities: {
+            text: true,
+            streaming: true,
+            vision: Boolean(classification.supportsVision),
+            tools: Boolean(this.provider.capabilities.tools),
+            json: true
+          },
+          discoveredAt: Date.now()
+        };
+      }
+
       const isVision = hasCapArray 
         ? item.capabilities.includes('vision') 
         : (hasInputModalities
@@ -249,7 +350,19 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       };
     });
 
-    // Filter out non-chat utility models (embeddings, moderation, whisper, tts, dall-e)
+    if (isNvidia) {
+      // Ensure a valid chat-capable model is default
+      if (!models.some(m => m.isDefault) && models.length > 0) {
+        const preferred = models.find(m => m.id === this.provider.defaultModelId) ||
+                          models.find(m => m.supportsChat && m.supportsVision) ||
+                          models.find(m => m.supportsChat) ||
+                          models[0];
+        preferred.isDefault = true;
+      }
+      return models;
+    }
+
+    // Filter out non-chat utility models for standard providers (embeddings, moderation, whisper, tts, dall-e)
     const chatModels = models.filter(m => 
       !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id)
     );
@@ -265,11 +378,19 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     return result;
   }
 
-  protected formatMessages(messages: ChatMessage[], systemPrompt?: string): any[] {
+  protected formatMessages(messages: ChatMessage[], systemPrompt?: string, targetModelId?: string): any[] {
     const formatted: any[] = [];
 
     if (systemPrompt) {
       formatted.push({ role: 'system', content: systemPrompt });
+    }
+
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+    // For NVIDIA, check if specific model supports vision. Otherwise use provider capability.
+    let canVision = Boolean(this.provider.capabilities.vision);
+    if (isNvidia && targetModelId) {
+      const isVisionModel = /vision|vl|image|diffus|paligemma|fuyu|kosmos|glimmer/i.test(targetModelId);
+      canVision = isVisionModel;
     }
 
     for (const msg of messages) {
@@ -294,7 +415,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         if (!msg.content) continue;
       }
 
-      if (msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && this.provider.capabilities.vision) {
+      if (msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && canVision) {
         const parts: any[] = [{ type: 'text', text: msg.content || 'Attached image/file' }];
         for (const att of msg.attachments) {
           if (att.type === 'image') {
@@ -317,10 +438,19 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
   }
 
   public async chat(params: ChatParams): Promise<string> {
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+    const targetModel = params.model || this.provider.defaultModelId || 'default';
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
+      console.log(`[NVIDIA] Selected model: ${targetModel}`);
+      console.log(`[NVIDIA] Request started`);
+    }
+
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
     const payload: any = {
-      model: params.model || this.provider.defaultModelId || 'default',
-      messages: this.formatMessages(params.messages, params.systemPrompt),
+      model: targetModel,
+      messages: this.formatMessages(params.messages, params.systemPrompt, targetModel),
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens,
       top_p: params.topP,
@@ -343,13 +473,52 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       });
     }
 
-    const res = await this.transport.request({
-      url: chatUrl,
-      method: 'POST',
-      headers: this.getHeaders(params.apiKey),
-      body: payload,
-      signal: params.signal
-    });
+    let res: any;
+    try {
+      res = await this.transport.request({
+        url: chatUrl,
+        method: 'POST',
+        headers: this.getHeaders(params.apiKey),
+        body: payload,
+        signal: params.signal
+      });
+    } catch (err: any) {
+      if (isNvidia) {
+        if (err.status === 401 || err.status === 403) {
+          throw {
+            ...err,
+            normalized: {
+              code: 'AUTH_ERROR',
+              message: 'Invalid NVIDIA API key or unauthorized access.',
+              statusCode: err.status
+            }
+          };
+        } else if (err.status === 429) {
+          throw {
+            ...err,
+            normalized: {
+              code: 'RATE_LIMIT',
+              message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
+              statusCode: 429
+            }
+          };
+        } else if (err.status === 404) {
+          throw {
+            ...err,
+            normalized: {
+              code: 'NOT_FOUND',
+              message: `Model '${targetModel}' is not currently available through your NVIDIA API endpoint.`,
+              statusCode: 404
+            }
+          };
+        }
+      }
+      throw err;
+    }
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] Response status: ${res.status || 200}`);
+    }
 
     if (params.onResponseInspector) {
       params.onResponseInspector({
@@ -365,10 +534,19 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
   }
 
   public async *streamChat(params: ChatParams): AsyncIterable<StreamEvent> {
+    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
+    const targetModel = params.model || this.provider.defaultModelId || 'default';
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
+      console.log(`[NVIDIA] Selected model: ${targetModel}`);
+      console.log(`[NVIDIA] Request started`);
+    }
+
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
     const payload: any = {
-      model: params.model || this.provider.defaultModelId || 'default',
-      messages: this.formatMessages(params.messages, params.systemPrompt),
+      model: targetModel,
+      messages: this.formatMessages(params.messages, params.systemPrompt, targetModel),
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens,
       top_p: params.topP,
@@ -438,7 +616,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
                 finishReason = data.choices[0].finish_reason;
               }
 
-              // Handle reasoning_content (DeepSeek-R1, Cerebras, etc.) and standard content delta separately
+              // Handle reasoning_content (DeepSeek-R1, NVIDIA Nemotron, Cerebras, etc.) and standard content delta separately
               const deltaContent = data.choices?.[0]?.delta?.content;
               const deltaReasoning = data.choices?.[0]?.delta?.reasoning_content || data.choices?.[0]?.delta?.reasoning;
 
@@ -460,9 +638,9 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
                 };
               }
 
-              // Handle streaming tool_calls
+              // Handle tool calls in streaming
               const deltaToolCalls = data.choices?.[0]?.delta?.tool_calls;
-              if (Array.isArray(deltaToolCalls)) {
+              if (deltaToolCalls && Array.isArray(deltaToolCalls)) {
                 for (const tc of deltaToolCalls) {
                   const idx = tc.index ?? 0;
                   if (!toolCallsMap.has(idx)) {
@@ -494,9 +672,34 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         }
       }
     } catch (err: any) {
-      const norm = err.normalized || normalizeError(err, err.status);
+      let norm = err.normalized || normalizeError(err, err.status);
+      if (isNvidia) {
+        if (err.status === 401 || err.status === 403) {
+          norm = {
+            code: 'AUTH_ERROR',
+            message: 'Invalid NVIDIA API key or unauthorized access.',
+            statusCode: err.status
+          };
+        } else if (err.status === 429) {
+          norm = {
+            code: 'RATE_LIMIT',
+            message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
+            statusCode: 429
+          };
+        } else if (err.status === 404) {
+          norm = {
+            code: 'NOT_FOUND',
+            message: `Model '${payload.model}' is not currently available through your NVIDIA API endpoint.`,
+            statusCode: 404
+          };
+        }
+      }
       yield { type: 'error', error: norm };
       return;
+    }
+
+    if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[NVIDIA] Stream completed`);
     }
 
     const totalDurationMs = Date.now() - requestStartTime;

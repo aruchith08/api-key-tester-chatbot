@@ -5,6 +5,7 @@ import { findExecutableFileScript } from '../utils/codeDetector';
 import { sandboxRunner } from '../sandbox/sandboxRunner';
 import { OPENAI_AGENT_TOOLS, parseToolArguments } from '../sandbox/agentTools';
 import type { MessageAttachment, ToolCall } from '../types/chat';
+import { invalidateNvidiaCache } from '../providers/nvidia/nvidiaBuildCatalog';
 
 export function useChat() {
   const {
@@ -39,6 +40,31 @@ export function useChat() {
       return;
     }
 
+    const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
+    let targetModel = selectedModel?.id || selectedProvider.defaultModelId || 'default';
+
+    // Model existence check before request dispatch (Section 20 & 31)
+    const isNvidia = selectedProvider.id === 'nvidia' || selectedProvider.id === 'nvidia-nim';
+    if (isNvidia) {
+      const currentModels = useAppStore.getState().models;
+      const existsInCurrent = currentModels.some(m => m.id === targetModel);
+      if (currentModels.length > 0 && !existsInCurrent) {
+        showNotification('This NVIDIA model is no longer available. Refreshing available models...');
+        try {
+          invalidateNvidiaCache();
+          const freshModels = await adapter.getModels(apiKey, true);
+          useAppStore.getState().setModels(freshModels, null, 'live');
+          const fallback = freshModels.find(m => m.supportsChat && m.id) || freshModels[0];
+          if (fallback) {
+            targetModel = fallback.id;
+            useAppStore.getState().setSelectedModel(fallback);
+          }
+        } catch (e) {
+          // Continue with fallback
+        }
+      }
+    }
+
     // 1. Add user message
     addUserMessage(content, attachments);
 
@@ -51,9 +77,6 @@ export function useChat() {
 
     const chatStartTime = Date.now();
     updateVerificationStage('chat', { status: 'RUNNING' });
-
-    const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
-    const targetModel = selectedModel?.id || selectedProvider.defaultModelId || 'default';
 
     const MAX_AGENT_TURNS = 5;
     let turn = 0;

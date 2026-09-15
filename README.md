@@ -4,7 +4,7 @@
 
 **A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 22+ AI providers instantly.**
 
-[![Tests](https://img.shields.io/badge/tests-316%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
+[![Tests](https://img.shields.io/badge/tests-359%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-cyan?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?style=flat-square&logo=vite)](https://vitejs.dev/)
@@ -89,7 +89,7 @@ ARH includes built-in adapters and model normalization for 22 industry providers
 | **Google Gemini** | `AIzaSy...` | Direct (Query Auth) | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Anthropic Claude** | `sk-ant-api03-...` | Direct (Caveat Header) | ✅ Yes | ✅ Yes | ✅ Yes |
 | **OpenRouter** | `sk-or-v1-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
-| **NVIDIA NIM** | `nvapi-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **NVIDIA Build (Free Endpoint)** | `nvapi-...` | Proxy Fallback (CORS) | ✅ Dynamic (`/v1/models`) | ✅ Yes | ✅ Yes |
 | **OpenAI** | `sk-proj-...` / `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
 | **DeepSeek** | `sk-...` (32 hex) | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Together AI** | `64-hex key` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
@@ -106,6 +106,21 @@ ARH includes built-in adapters and model normalization for 22 industry providers
 | **Hugging Face** | `hf_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Moonshot (Kimi)** | `sk-...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Custom / Ollama** | `http://...` | Direct Localhost | ✅ Yes | ✅ Yes | ✅ Yes |
+
+---
+
+### 🟢 NVIDIA Build & Free Endpoint Models
+
+ARH features full native integration with **NVIDIA Build** (`https://build.nvidia.com`), supporting its curated catalog of Free Endpoint models:
+
+- **Base URL**: `https://integrate.api.nvidia.com/v1`
+- **Dynamic Model Discovery**: `GET https://integrate.api.nvidia.com/v1/models` queries all available live models at runtime.
+- **Chat Endpoint**: `POST https://integrate.api.nvidia.com/v1/chat/completions`
+- **Authentication**: `Authorization: Bearer nvapi-...`
+- **Authoritative Model IDs**: Model IDs are strictly preserved from the NVIDIA API response (e.g. `openai/gpt-oss-20b`, `meta/muse-glimmer-30b`, `meta/llama-3.2-90b-vision-instruct`, `nvidia/nemotron-3-super-120b-a12b`). Model IDs are never artificially prefixed with `nvidia/` or fabricated.
+- **Model Capability Classification**: Models are categorized across `chat`, `vision`, `reasoning`, `embedding`, `audio`, `translation`, `safety`, `autonomous-driving`, and `optimization`.
+- **Chat Filtered Selector**: The primary chat model selector exposes only chat-capable models, with category tabs (`Chat`, `Vision`, `Reasoning`, `Embeddings`, `Audio`, `Translation`, `Safety`, `All`) and live dynamic refresh.
+- **Rate Limit & Error Handling**: Gracefully maps HTTP 401/403, 404 (with exact model ID), and 429 ("NVIDIA Free Endpoint rate limit reached. Please wait and try again.").
 
 ---
 

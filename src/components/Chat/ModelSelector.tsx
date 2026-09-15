@@ -1,37 +1,104 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import type { Model } from '../../types/provider';
-import { Search, Zap, Check, X, Plus } from 'lucide-react';
+import { Search, Zap, Check, X, Plus, RefreshCw, Eye, Brain, MessageSquare } from 'lucide-react';
+import { ProviderRegistry } from '../../providers/registry';
+import { isNvidiaChatCompatible, invalidateNvidiaCache } from '../../providers/nvidia/nvidiaBuildCatalog';
 
 export const ModelSelector: React.FC = () => {
   const {
+    apiKey,
     isModelSelectorOpen,
     setModelSelectorOpen,
     models,
+    setModels,
     selectedModel,
     setSelectedModel,
-    selectedProvider
+    selectedProvider,
+    showNotification
   } = useAppStore();
 
   const [search, setSearch] = useState('');
   const [customModelInput, setCustomModelInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string>('chat');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const isNvidia = selectedProvider?.id === 'nvidia' || selectedProvider?.id === 'nvidia-nim';
+
+  const categories = useMemo(() => {
+    if (!isNvidia) return [];
+    return [
+      { id: 'chat', label: 'Chat' },
+      { id: 'vision', label: 'Vision' },
+      { id: 'reasoning', label: 'Reasoning' },
+      { id: 'embedding', label: 'Embeddings' },
+      { id: 'audio', label: 'Audio' },
+      { id: 'translation', label: 'Translation' },
+      { id: 'safety', label: 'Safety' },
+      { id: 'all', label: 'All Models' }
+    ];
+  }, [isNvidia]);
 
   const filtered = useMemo(() => {
+    let list = models;
+
+    // Apply category tab filtering
+    if (isNvidia) {
+      if (activeCategory === 'chat') {
+        list = list.filter(m => isNvidiaChatCompatible(m));
+      } else if (activeCategory === 'vision') {
+        list = list.filter(m => m.supportsVision || m.capabilities?.vision || m.category === 'vision');
+      } else if (activeCategory === 'reasoning') {
+        list = list.filter(m => m.supportsReasoning || m.category === 'reasoning');
+      } else if (activeCategory === 'embedding') {
+        list = list.filter(m => m.category === 'embedding');
+      } else if (activeCategory === 'audio') {
+        list = list.filter(m => m.category === 'audio');
+      } else if (activeCategory === 'translation') {
+        list = list.filter(m => m.category === 'translation');
+      } else if (activeCategory === 'safety') {
+        list = list.filter(m => m.category === 'safety');
+      }
+    }
+
     const q = search.toLowerCase().trim();
-    if (!q) return models;
-    return models.filter(m => 
+    if (!q) return list;
+    return list.filter(m => 
       m.name.toLowerCase().includes(q) || 
       m.id.toLowerCase().includes(q) || 
+      (m.publisher && m.publisher.toLowerCase().includes(q)) ||
       (m.description && m.description.toLowerCase().includes(q))
     );
-  }, [models, search]);
+  }, [models, search, isNvidia, activeCategory]);
 
   if (!isModelSelectorOpen) return null;
 
   const handleSelect = (model: Model) => {
     setSelectedModel(model);
     setModelSelectorOpen(false);
+  };
+
+  const handleRefreshModels = async () => {
+    if (!selectedProvider || !apiKey) {
+      showNotification('Please connect an API key first.');
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      if (isNvidia) {
+        invalidateNvidiaCache();
+      }
+      const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
+      const freshModels = await adapter.getModels(apiKey, true);
+      setModels(freshModels, selectedModel, 'live');
+      showNotification(`Refreshed ${freshModels.length} models from ${selectedProvider.name}.`);
+    } catch (err: any) {
+      showNotification(err.message || 'Failed to refresh models from API.');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleAddCustomModel = () => {
@@ -41,7 +108,8 @@ export const ModelSelector: React.FC = () => {
     const newModel: Model = {
       id: trimmed,
       name: trimmed,
-      isDefault: true
+      isDefault: true,
+      capabilities: { text: true, streaming: true }
     };
     setSelectedModel(newModel);
     setShowCustomInput(false);
@@ -54,7 +122,7 @@ export const ModelSelector: React.FC = () => {
       onClick={() => setModelSelectorOpen(false)}
     >
       <div 
-        className="relative w-full max-w-md bg-[#121214] border border-[#27272C] rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+        className="relative w-full max-w-lg bg-[#121214] border border-[#27272C] rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -63,22 +131,57 @@ export const ModelSelector: React.FC = () => {
             <Zap className="w-4 h-4 text-emerald-400" />
             <h3 className="text-sm font-medium text-white">Select Model</h3>
             {selectedProvider && (
-              <span className="text-[11px] text-neutral-500 font-mono">
+              <span className="text-[11px] text-neutral-400 font-mono">
                 ({selectedProvider.name})
               </span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => setModelSelectorOpen(false)}
-            className="p-1 text-neutral-400 hover:text-white rounded-lg hover:bg-white/5"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1.5">
+            {/* Refresh Models Action Button */}
+            <button
+              type="button"
+              onClick={handleRefreshModels}
+              disabled={isRefreshing}
+              className="flex items-center gap-1 px-2.5 py-1 text-[11px] bg-[#18181C] hover:bg-[#222228] text-neutral-300 hover:text-white border border-[#2B2B30] rounded-lg transition-colors cursor-pointer"
+              title="Refresh models dynamically from API"
+            >
+              <RefreshCw className={`w-3 h-3 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setModelSelectorOpen(false)}
+              className="p-1 text-neutral-400 hover:text-white rounded-lg hover:bg-white/5"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
+        {/* Category Tabs for NVIDIA */}
+        {isNvidia && categories.length > 0 && (
+          <div className="flex items-center gap-1 overflow-x-auto py-2 border-b border-[#1C1C20] no-scrollbar">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-neutral-200 text-neutral-900 shadow-xs'
+                    : 'bg-[#18181C] text-neutral-400 hover:text-neutral-200 hover:bg-[#202026]'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Search */}
-        <div className="my-3">
+        <div className="my-2.5">
           <div className="relative flex items-center w-full bg-[#17171A] border border-[#26262B] rounded-xl px-3 py-2 text-xs">
             <Search className="w-3.5 h-3.5 text-neutral-500 mr-2 shrink-0" />
             <input
@@ -93,23 +196,34 @@ export const ModelSelector: React.FC = () => {
         </div>
 
         {/* Model List */}
-        <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 max-h-[300px]" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex flex-col gap-1.5 overflow-y-auto pr-1 flex-1 max-h-[380px]" style={{ scrollbarWidth: 'thin' }}>
           {filtered.map((m) => {
             const isSelected = selectedModel?.id === m.id;
+            const isVision = Boolean(m.supportsVision || m.capabilities?.vision);
+            const isReasoning = Boolean(m.supportsReasoning);
+            const isFreeEndpoint = Boolean(m.freeEndpoint || isNvidia);
+
             return (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => handleSelect(m)}
-                className={`flex items-start justify-between p-2.5 rounded-xl text-left transition-all ${
+                className={`flex items-start justify-between p-3 rounded-xl text-left transition-all ${
                   isSelected
                     ? 'bg-neutral-200 text-neutral-900 font-medium'
                     : 'bg-[#161619] hover:bg-[#1E1E22] text-neutral-200 border border-[#202024]'
                 }`}
               >
-                <div className="truncate mr-2">
-                  <div className="text-xs font-medium truncate flex items-center gap-1.5">
-                    <span>{m.name || m.id}</span>
+                <div className="flex-1 mr-2 overflow-hidden">
+                  <div className="text-xs font-medium truncate flex items-center gap-1.5 flex-wrap">
+                    <span className="font-semibold">{m.displayName || m.name || m.id}</span>
+                    {m.publisher && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                        isSelected ? 'bg-neutral-300 text-neutral-900 font-medium' : 'bg-[#222228] text-neutral-400'
+                      }`}>
+                        {m.publisher}{m.parameterSize ? ` · ${m.parameterSize}` : ''}
+                      </span>
+                    )}
                     {m.contextWindow && (
                       <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
                         isSelected ? 'bg-neutral-300 text-neutral-800' : 'bg-[#222228] text-neutral-400'
@@ -118,8 +232,55 @@ export const ModelSelector: React.FC = () => {
                       </span>
                     )}
                   </div>
-                  <div className={`text-[10px] font-mono truncate mt-0.5 ${isSelected ? 'text-neutral-600' : 'text-neutral-500'}`}>
+
+                  <div className={`text-[11px] font-mono truncate mt-0.5 ${isSelected ? 'text-neutral-700' : 'text-neutral-500'}`}>
                     {m.id}
+                  </div>
+
+                  {/* Capability Chips & Free Endpoint Badge */}
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    {isFreeEndpoint && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                        isSelected 
+                          ? 'bg-emerald-600/20 text-emerald-900 border border-emerald-600/30' 
+                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      }`}>
+                        🟢 Free Endpoint · Rate limited
+                      </span>
+                    )}
+
+                    {isReasoning && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                        isSelected ? 'bg-purple-300 text-purple-900' : 'bg-purple-500/10 text-purple-300'
+                      }`}>
+                        <Brain className="w-2.5 h-2.5" />
+                        <span>Reasoning</span>
+                      </span>
+                    )}
+
+                    {isVision && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                        isSelected ? 'bg-sky-300 text-sky-900' : 'bg-sky-500/10 text-sky-300'
+                      }`}>
+                        <Eye className="w-2.5 h-2.5" />
+                        <span>Vision</span>
+                      </span>
+                    )}
+
+                    {m.supportsChat && !isVision && !isReasoning && (
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                        isSelected ? 'bg-neutral-300 text-neutral-800' : 'bg-white/5 text-neutral-400'
+                      }`}>
+                        <MessageSquare className="w-2.5 h-2.5" />
+                        <span>Chat</span>
+                      </span>
+                    )}
+
+                    {m.description && m.description.includes('availability not verified') && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        Unverified catalog
+                      </span>
+                    )}
                   </div>
                 </div>
                 {isSelected && <Check className="w-4 h-4 text-neutral-900 shrink-0 mt-0.5" />}
@@ -128,7 +289,7 @@ export const ModelSelector: React.FC = () => {
           })}
 
           {filtered.length === 0 && (
-            <div className="text-center py-6 text-xs text-neutral-500">
+            <div className="text-center py-8 text-xs text-neutral-500">
               No models found matching "{search}"
             </div>
           )}
@@ -140,7 +301,7 @@ export const ModelSelector: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCustomInput(true)}
-              className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors w-full justify-center py-1"
+              className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors w-full justify-center py-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Enter custom model ID</span>
@@ -151,14 +312,14 @@ export const ModelSelector: React.FC = () => {
                 type="text"
                 value={customModelInput}
                 onChange={(e) => setCustomModelInput(e.target.value)}
-                placeholder="e.g. gpt-4o-mini or llama3"
+                placeholder="e.g. openai/gpt-oss-20b or meta/llama-3.2-90b-vision-instruct"
                 className="flex-1 bg-[#17171A] border border-[#2B2B32] rounded-xl px-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-600 outline-none"
               />
               <button
                 type="button"
                 onClick={handleAddCustomModel}
                 disabled={!customModelInput.trim()}
-                className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-medium rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 bg-emerald-500 text-black text-xs font-medium rounded-xl hover:bg-emerald-400 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Use
               </button>
