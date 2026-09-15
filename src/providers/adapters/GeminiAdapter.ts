@@ -5,6 +5,8 @@ import { DirectTransport } from '../transport';
 import { normalizeError } from '../error-normalizer';
 import type { ChatMessage } from '../../types/chat';
 import { sanitizeUrl, sanitizeHeaders } from '../../utils/maskApiKey';
+import { classifyUniversalModel } from '../modelClassifier';
+import { getCachedModels, setCachedModels } from '../modelCache';
 
 export class GeminiAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -26,6 +28,10 @@ export class GeminiAdapter implements AIProviderAdapter {
 
       const models = this.normalizeModels(res.data);
       const resolvedModels = models.length > 0 ? models : (this.provider.fallbackModels || []);
+
+      // Cache models in multi-provider cache
+      setCachedModels(this.provider.id, resolvedModels);
+
       return {
         success: true,
         provider: this.provider.name,
@@ -60,7 +66,14 @@ export class GeminiAdapter implements AIProviderAdapter {
     }
   }
 
-  public async getModels(apiKey: string): Promise<AIModel[]> {
+  public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
+    if (!bypassCache) {
+      const cached = getCachedModels(this.provider.id);
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+    }
+
     try {
       const url = `${this.provider.baseUrl}/models?key=${apiKey}`;
       const res = await this.transport.request({
@@ -68,7 +81,10 @@ export class GeminiAdapter implements AIProviderAdapter {
         method: 'GET'
       });
       const models = this.normalizeModels(res.data);
-      return models.length > 0 ? models : (this.provider.fallbackModels || []);
+      const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
+
+      setCachedModels(this.provider.id, resolved);
+      return resolved;
     } catch (err: any) {
       if (this.provider.fallbackModels && this.provider.fallbackModels.length > 0) {
         return this.provider.fallbackModels;
@@ -86,27 +102,35 @@ export class GeminiAdapter implements AIProviderAdapter {
       const methods: string[] = m.supportedGenerationMethods || [];
 
       if (methods.includes('generateContent') && !id.includes('embedding') && !id.includes('aqa')) {
-        models.push({
-          id,
-          name: m.displayName || id,
-          provider: this.provider.name,
-          description: m.description,
-          contextWindow: m.inputTokenLimit,
-          maxOutputTokens: m.outputTokenLimit,
-          isDefault: id === 'gemini-1.5-flash' || id === 'gemini-2.0-flash',
-          capabilities: {
-            text: true,
-            streaming: true,
-            vision: true,
-            tools: true,
-            json: true
-          }
-        });
+        const classified = classifyUniversalModel(
+          {
+            ...m,
+            id,
+            displayName: m.displayName || id,
+            description: m.description,
+            contextWindow: m.inputTokenLimit,
+            maxOutputTokens: m.outputTokenLimit,
+            freeEndpoint: true
+          },
+          this.provider.id,
+          this.provider.name,
+          this.provider.capabilities,
+          this.provider.defaultModelId || 'gemini-2.0-flash'
+        );
+        classified.publisher = 'Google';
+        classified.supportsVision = true;
+        classified.supportsAudio = true;
+        if (/thinking/i.test(id)) {
+          classified.supportsReasoning = true;
+          classified.category = 'reasoning';
+        }
+        models.push(classified);
       }
     }
 
     if (models.length > 0 && !models.some(m => m.isDefault)) {
-      models[0].isDefault = true;
+      const preferred = models.find(m => m.id === 'gemini-2.0-flash' || m.id === 'gemini-1.5-flash') || models[0];
+      preferred.isDefault = true;
     }
 
     return models;

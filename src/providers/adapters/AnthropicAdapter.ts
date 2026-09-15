@@ -5,6 +5,8 @@ import { DirectTransport } from '../transport';
 import { normalizeError } from '../error-normalizer';
 import type { ChatMessage } from '../../types/chat';
 import { sanitizeHeaders } from '../../utils/maskApiKey';
+import { classifyUniversalModel } from '../modelClassifier';
+import { getCachedModels, setCachedModels } from '../modelCache';
 
 export class AnthropicAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -35,12 +37,17 @@ export class AnthropicAdapter implements AIProviderAdapter {
       });
 
       const models = this.normalizeModels(res.data);
+      const resolvedModels = models.length > 0 ? models : (this.provider.fallbackModels || []);
+
+      // Cache models in multi-provider cache
+      setCachedModels(this.provider.id, resolvedModels);
+
       return {
         success: true,
         provider: this.provider.name,
         providerId: this.provider.id,
         status: res.status,
-        models,
+        models: resolvedModels,
         latencyMs: res.latencyMs
       };
     } catch (err: any) {
@@ -69,7 +76,14 @@ export class AnthropicAdapter implements AIProviderAdapter {
     }
   }
 
-  public async getModels(apiKey: string): Promise<AIModel[]> {
+  public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
+    if (!bypassCache) {
+      const cached = getCachedModels(this.provider.id);
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+    }
+
     try {
       const modelsUrl = `${this.provider.baseUrl}/models`;
       const res = await this.transport.request({
@@ -77,34 +91,71 @@ export class AnthropicAdapter implements AIProviderAdapter {
         method: 'GET',
         headers: this.getHeaders(apiKey)
       });
-      return this.normalizeModels(res.data);
+      const models = this.normalizeModels(res.data);
+      const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
+
+      setCachedModels(this.provider.id, resolved);
+      return resolved;
     } catch (err: any) {
       if (this.provider.fallbackModels && this.provider.fallbackModels.length > 0) {
         return this.provider.fallbackModels;
       }
       return [
         {
-          id: 'claude-3-5-sonnet-20241022',
-          name: 'Claude 3.5 Sonnet',
+          id: 'claude-3-7-sonnet-20250219',
+          apiModelId: 'claude-3-7-sonnet-20250219',
+          name: 'Claude 3.7 Sonnet',
+          displayName: 'Claude 3.7 Sonnet',
           provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'reasoning',
           contextWindow: 200000,
           isDefault: true,
+          supportsChat: true,
+          supportsVision: true,
+          supportsReasoning: true,
+          capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+        },
+        {
+          id: 'claude-3-5-sonnet-20241022',
+          apiModelId: 'claude-3-5-sonnet-20241022',
+          name: 'Claude 3.5 Sonnet',
+          displayName: 'Claude 3.5 Sonnet',
+          provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'vision',
+          contextWindow: 200000,
+          isDefault: false,
+          supportsChat: true,
+          supportsVision: true,
           capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
         },
         {
           id: 'claude-3-5-haiku-20241022',
+          apiModelId: 'claude-3-5-haiku-20241022',
           name: 'Claude 3.5 Haiku',
+          displayName: 'Claude 3.5 Haiku',
           provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'chat',
           contextWindow: 200000,
           isDefault: false,
+          supportsChat: true,
+          supportsVision: true,
           capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
         },
         {
           id: 'claude-3-opus-20240229',
+          apiModelId: 'claude-3-opus-20240229',
           name: 'Claude 3 Opus',
+          displayName: 'Claude 3 Opus',
           provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'vision',
           contextWindow: 200000,
           isDefault: false,
+          supportsChat: true,
+          supportsVision: true,
           capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
         }
       ];
@@ -113,43 +164,78 @@ export class AnthropicAdapter implements AIProviderAdapter {
 
   protected normalizeModels(data: any): AIModel[] {
     const list: any[] = data.data || [];
-    const models: AIModel[] = list.map((item: any) => ({
-      id: item.id,
-      name: item.display_name || item.id,
-      provider: this.provider.name,
-      isDefault: item.id === 'claude-3-5-sonnet-20241022' || item.id === this.provider.defaultModelId,
-      capabilities: {
-        text: true,
-        streaming: true,
-        vision: true,
-        tools: true,
-        json: true
+    const models: AIModel[] = list.map((item: any) => {
+      const classified = classifyUniversalModel(
+        {
+          ...item,
+          displayName: item.display_name || item.id,
+          contextWindow: 200000
+        },
+        this.provider.id,
+        this.provider.name,
+        this.provider.capabilities,
+        this.provider.defaultModelId || 'claude-3-5-sonnet-20241022'
+      );
+      classified.publisher = 'Anthropic';
+      classified.supportsVision = true;
+      if (/3-7|thinking/i.test(item.id)) {
+        classified.supportsReasoning = true;
+        classified.category = 'reasoning';
       }
-    }));
+      return classified;
+    });
 
     if (models.length === 0) {
       return [
         {
-          id: 'claude-3-5-sonnet-20241022',
-          name: 'Claude 3.5 Sonnet',
+          id: 'claude-3-7-sonnet-20250219',
+          apiModelId: 'claude-3-7-sonnet-20250219',
+          name: 'Claude 3.7 Sonnet',
+          displayName: 'Claude 3.7 Sonnet',
           provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'reasoning',
           contextWindow: 200000,
           isDefault: true,
+          supportsChat: true,
+          supportsVision: true,
+          supportsReasoning: true,
+          capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+        },
+        {
+          id: 'claude-3-5-sonnet-20241022',
+          apiModelId: 'claude-3-5-sonnet-20241022',
+          name: 'Claude 3.5 Sonnet',
+          displayName: 'Claude 3.5 Sonnet',
+          provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'vision',
+          contextWindow: 200000,
+          isDefault: false,
+          supportsChat: true,
+          supportsVision: true,
           capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
         },
         {
           id: 'claude-3-5-haiku-20241022',
+          apiModelId: 'claude-3-5-haiku-20241022',
           name: 'Claude 3.5 Haiku',
+          displayName: 'Claude 3.5 Haiku',
           provider: 'Anthropic',
+          publisher: 'Anthropic',
+          category: 'chat',
           contextWindow: 200000,
           isDefault: false,
+          supportsChat: true,
+          supportsVision: true,
           capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
         }
       ];
     }
 
     if (!models.some(m => m.isDefault)) {
-      models[0].isDefault = true;
+      const preferred = models.find(m => m.id === 'claude-3-7-sonnet-20250219' || m.id === 'claude-3-5-sonnet-20241022') || models[0];
+      preferred.isDefault = true;
     }
 
     return models;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ARHLogo } from '../Home/ARHLogo';
 import { PROVIDER_CATALOG } from '../../providers/catalog';
+import { getCachedModels } from '../../providers/modelCache';
 import { 
   X, 
   ShieldCheck, 
@@ -31,7 +32,15 @@ const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5
 type Tab = 'overview' | 'features' | 'architecture' | 'providers' | 'specs';
 
 export const AboutModal: React.FC = () => {
-  const { isAboutModalOpen, setAboutModalOpen } = useAppStore();
+  const { 
+    isAboutModalOpen, 
+    setAboutModalOpen, 
+    selectedProvider, 
+    connectionState, 
+    models, 
+    setApiKeyModalOpen, 
+    setSelectedProvider 
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   // Close on Escape key
@@ -365,6 +374,11 @@ Right-Side Interactive File Previewer (PDF, Word, Excel, HTML, Images)`}</pre>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[380px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
                 {PROVIDER_CATALOG.map((provider) => {
+                  const isActive = (selectedProvider?.id === provider.id || (provider.id === 'nvidia-nim' && selectedProvider?.id === 'nvidia')) && connectionState === 'ready';
+                  const cached = getCachedModels(provider.id);
+                  const modelCount = (isActive && models.length > 0) ? models.length : (cached?.length || provider.fallbackModels?.length || 1);
+                  const isLive = (isActive && models.length > 0) || Boolean(cached && cached.length > 0);
+
                   let badgeText = 'Direct';
                   let badgeStyle = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
                   
@@ -382,10 +396,31 @@ Right-Side Interactive File Previewer (PDF, Word, Excel, HTML, Images)`}</pre>
                   return (
                     <div 
                       key={provider.id}
-                      className="p-2.5 bg-[#151518] border border-[#232328] hover:border-[#2F2F36] rounded-xl transition-all space-y-1"
+                      onClick={() => {
+                        if (!isActive) {
+                          setSelectedProvider(provider);
+                          setApiKeyModalOpen(true);
+                          setAboutModalOpen(false);
+                        }
+                      }}
+                      className={`p-2.5 rounded-xl transition-all space-y-1 cursor-pointer ${
+                        isActive
+                          ? 'bg-[#18231c] border-2 border-emerald-500/50 shadow-sm'
+                          : 'bg-[#151518] border border-[#232328] hover:border-[#383842] hover:bg-[#1A1A1E]'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-white text-xs">{provider.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          {isActive && (
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                          )}
+                          <span className="font-medium text-white text-xs">{provider.name}</span>
+                          {isActive && (
+                            <span className="text-[9px] px-1 py-0.2 rounded font-mono bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                              Active
+                            </span>
+                          )}
+                        </div>
                         <span className={`px-1.5 py-0.5 text-[9px] font-mono rounded border ${badgeStyle}`}>
                           {badgeText}
                         </span>
@@ -394,7 +429,9 @@ Right-Side Interactive File Previewer (PDF, Word, Excel, HTML, Images)`}</pre>
                         {provider.description || provider.name}
                       </p>
                       <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-0.5">
-                        <span className="truncate max-w-[150px]">Default: {provider.defaultModelId?.split('/').pop() || 'Dynamic'}</span>
+                        <span className="truncate max-w-[150px]">
+                          {modelCount} {isLive ? 'live' : 'catalog'} models
+                        </span>
                         <span className="text-neutral-400 font-mono text-[9px]">{provider.adapterType}</span>
                       </div>
                     </div>

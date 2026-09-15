@@ -69,6 +69,9 @@ async function main() {
     const { runNvidiaAdapterTests } = await server.ssrLoadModule('./tests/adapters/nvidia.test.ts');
     await runNvidiaAdapterTests(server, assert);
 
+    const { runAllProvidersTests } = await server.ssrLoadModule('./tests/adapters/all-providers.test.ts');
+    await runAllProvidersTests(server, assert);
+
     // 3. Normalization suite
     const { runErrorNormalizationTests } = await server.ssrLoadModule('./tests/normalization/errors.test.ts');
     await runErrorNormalizationTests(server, assert);

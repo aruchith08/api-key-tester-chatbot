@@ -4,6 +4,7 @@ import type { Model } from '../../types/provider';
 import { Search, Zap, Check, X, Plus, RefreshCw, Eye, Brain, MessageSquare } from 'lucide-react';
 import { ProviderRegistry } from '../../providers/registry';
 import { isNvidiaChatCompatible, invalidateNvidiaCache } from '../../providers/nvidia/nvidiaBuildCatalog';
+import { invalidateModelCache } from '../../providers/modelCache';
 
 export const ModelSelector: React.FC = () => {
   const {
@@ -27,39 +28,68 @@ export const ModelSelector: React.FC = () => {
   const isNvidia = selectedProvider?.id === 'nvidia' || selectedProvider?.id === 'nvidia-nim';
 
   const categories = useMemo(() => {
-    if (!isNvidia) return [];
-    return [
-      { id: 'chat', label: 'Chat' },
-      { id: 'vision', label: 'Vision' },
-      { id: 'reasoning', label: 'Reasoning' },
-      { id: 'embedding', label: 'Embeddings' },
-      { id: 'audio', label: 'Audio' },
-      { id: 'translation', label: 'Translation' },
-      { id: 'safety', label: 'Safety' },
-      { id: 'all', label: 'All Models' }
-    ];
-  }, [isNvidia]);
+    if (isNvidia) {
+      return [
+        { id: 'chat', label: 'Chat' },
+        { id: 'vision', label: 'Vision' },
+        { id: 'reasoning', label: 'Reasoning' },
+        { id: 'embedding', label: 'Embeddings' },
+        { id: 'audio', label: 'Audio' },
+        { id: 'translation', label: 'Translation' },
+        { id: 'safety', label: 'Safety' },
+        { id: 'all', label: 'All Models' }
+      ];
+    }
+
+    // Dynamic category tabs for all other providers based on models present
+    const cats: { id: string; label: string }[] = [{ id: 'chat', label: 'Chat' }];
+
+    const hasVision = models.some(m => m.supportsVision || m.capabilities?.vision || m.category === 'vision');
+    if (hasVision) cats.push({ id: 'vision', label: 'Vision' });
+
+    const hasReasoning = models.some(m => m.supportsReasoning || m.category === 'reasoning');
+    if (hasReasoning) cats.push({ id: 'reasoning', label: 'Reasoning' });
+
+    const hasFree = models.some(m => m.freeEndpoint);
+    if (hasFree) cats.push({ id: 'free', label: 'Free Models' });
+
+    const hasEmbedding = models.some(m => m.category === 'embedding');
+    if (hasEmbedding) cats.push({ id: 'embedding', label: 'Embeddings' });
+
+    const hasAudio = models.some(m => m.category === 'audio');
+    if (hasAudio) cats.push({ id: 'audio', label: 'Audio' });
+
+    if (cats.length > 1) {
+      cats.push({ id: 'all', label: 'All Models' });
+    }
+
+    return cats;
+  }, [models, isNvidia]);
 
   const filtered = useMemo(() => {
     let list = models;
 
-    // Apply category tab filtering
-    if (isNvidia) {
-      if (activeCategory === 'chat') {
+    // Apply category tab filtering across all providers
+    if (activeCategory === 'chat') {
+      if (isNvidia) {
         list = list.filter(m => isNvidiaChatCompatible(m));
-      } else if (activeCategory === 'vision') {
-        list = list.filter(m => m.supportsVision || m.capabilities?.vision || m.category === 'vision');
-      } else if (activeCategory === 'reasoning') {
-        list = list.filter(m => m.supportsReasoning || m.category === 'reasoning');
-      } else if (activeCategory === 'embedding') {
-        list = list.filter(m => m.category === 'embedding');
-      } else if (activeCategory === 'audio') {
-        list = list.filter(m => m.category === 'audio');
-      } else if (activeCategory === 'translation') {
-        list = list.filter(m => m.category === 'translation');
-      } else if (activeCategory === 'safety') {
-        list = list.filter(m => m.category === 'safety');
+      } else {
+        list = list.filter(m => m.supportsChat !== false && m.category !== 'embedding' && m.category !== 'audio' && m.category !== 'safety');
       }
+    } else if (activeCategory === 'vision') {
+      list = list.filter(m => m.supportsVision || m.capabilities?.vision || m.category === 'vision');
+    } else if (activeCategory === 'reasoning') {
+      list = list.filter(m => m.supportsReasoning || m.category === 'reasoning');
+    } else if (activeCategory === 'free') {
+      list = list.filter(m => m.freeEndpoint);
+    } else if (activeCategory === 'embedding') {
+      list = list.filter(m => m.category === 'embedding');
+    } else if (activeCategory === 'audio') {
+      list = list.filter(m => m.category === 'audio');
+    } else if (activeCategory === 'translation') {
+      list = list.filter(m => m.category === 'translation');
+    } else if (activeCategory === 'safety') {
+      list = list.filter(m => m.category === 'safety');
     }
 
     const q = search.toLowerCase().trim();
@@ -87,6 +117,7 @@ export const ModelSelector: React.FC = () => {
 
     setIsRefreshing(true);
     try {
+      invalidateModelCache(selectedProvider.id);
       if (isNvidia) {
         invalidateNvidiaCache();
       }
@@ -160,8 +191,8 @@ export const ModelSelector: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Tabs for NVIDIA */}
-        {isNvidia && categories.length > 0 && (
+        {/* Category Tabs across all providers */}
+        {categories.length > 1 && (
           <div className="flex items-center gap-1 overflow-x-auto py-2 border-b border-[#1C1C20] no-scrollbar">
             {categories.map((cat) => (
               <button

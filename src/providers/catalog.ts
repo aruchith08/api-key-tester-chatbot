@@ -32,24 +32,56 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'llama-3.3-70b-versatile',
+        apiModelId: 'llama-3.3-70b-versatile',
         name: 'Llama 3.3 70B Versatile',
+        displayName: 'Llama 3.3 70B Versatile',
         provider: 'Groq',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 128000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'llama-3.1-8b-instant',
+        apiModelId: 'llama-3.1-8b-instant',
         name: 'Llama 3.1 8B Instant',
+        displayName: 'Llama 3.1 8B Instant',
         provider: 'Groq',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'deepseek-r1-distill-llama-70b',
+        apiModelId: 'deepseek-r1-distill-llama-70b',
+        name: 'DeepSeek R1 Distill Llama 70B',
+        displayName: 'DeepSeek R1 Distill Llama 70B',
+        provider: 'Groq',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
+        contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'mixtral-8x7b-32768',
+        apiModelId: 'mixtral-8x7b-32768',
         name: 'Mixtral 8x7B',
+        displayName: 'Mixtral 8x7B',
         provider: 'Groq',
+        publisher: 'Mistral AI',
+        category: 'chat',
         contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       }
     ],
@@ -92,6 +124,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'meta/llama-3.2-11b-vision-instruct',
+        apiModelId: 'meta/llama-3.2-11b-vision-instruct',
         name: 'Llama 3.2 11B Vision Instruct',
         provider: 'NVIDIA NIM',
         publisher: 'Meta',
@@ -108,6 +141,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       },
       {
         id: 'openai/gpt-oss-20b',
+        apiModelId: 'openai/gpt-oss-20b',
         name: 'GPT-OSS 20B',
         provider: 'NVIDIA NIM',
         publisher: 'OpenAI',
@@ -123,6 +157,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       },
       {
         id: 'meta/llama-3.2-90b-vision-instruct',
+        apiModelId: 'meta/llama-3.2-90b-vision-instruct',
         name: 'Llama 3.2 90B Vision Instruct',
         provider: 'NVIDIA NIM',
         publisher: 'Meta',
@@ -181,24 +216,58 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'meta-llama/llama-3.3-70b-instruct',
+        apiModelId: 'meta-llama/llama-3.3-70b-instruct',
         name: 'Llama 3.3 70B Instruct',
+        displayName: 'Llama 3.3 70B Instruct',
         provider: 'OpenRouter',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 131072,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
-        id: 'deepseek/deepseek-chat',
-        name: 'DeepSeek V3',
+        id: 'meta-llama/llama-3.3-70b-instruct:free',
+        apiModelId: 'meta-llama/llama-3.3-70b-instruct:free',
+        name: 'Llama 3.3 70B Instruct (Free)',
+        displayName: 'Llama 3.3 70B Instruct (Free)',
         provider: 'OpenRouter',
+        publisher: 'Meta',
+        category: 'chat',
+        contextWindow: 131072,
+        freeEndpoint: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'deepseek/deepseek-r1',
+        apiModelId: 'deepseek/deepseek-r1',
+        name: 'DeepSeek R1',
+        displayName: 'DeepSeek R1',
+        provider: 'OpenRouter',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
         contextWindow: 64000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'anthropic/claude-3.5-sonnet',
+        apiModelId: 'anthropic/claude-3.5-sonnet',
         name: 'Claude 3.5 Sonnet',
+        displayName: 'Claude 3.5 Sonnet',
         provider: 'OpenRouter',
+        publisher: 'Anthropic',
+        category: 'vision',
         contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       }
     ],
@@ -223,7 +292,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     documentationUrl: 'https://ai.google.dev/docs',
     authHeader: 'x-goog-api-key',
     authPrefix: '',
-    defaultModelId: 'gemini-1.5-flash',
+    defaultModelId: 'gemini-2.0-flash',
     tier: 1,
     
     connectionMode: 'DIRECT_WITH_WARNING',
@@ -241,25 +310,65 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
 },
     fallbackModels: [
       {
-        id: 'gemini-1.5-flash',
-        name: 'Gemini 1.5 Flash',
+        id: 'gemini-2.0-flash',
+        apiModelId: 'gemini-2.0-flash',
+        name: 'Gemini 2.0 Flash',
+        displayName: 'Gemini 2.0 Flash',
         provider: 'Google Gemini',
+        publisher: 'Google',
+        category: 'vision',
         contextWindow: 1048576,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        freeEndpoint: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'gemini-2.0-flash-thinking-exp-01-21',
+        apiModelId: 'gemini-2.0-flash-thinking-exp-01-21',
+        name: 'Gemini 2.0 Flash Thinking Exp',
+        displayName: 'Gemini 2.0 Flash Thinking Exp',
+        provider: 'Google Gemini',
+        publisher: 'Google',
+        category: 'reasoning',
+        contextWindow: 1048576,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        supportsReasoning: true,
+        freeEndpoint: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'gemini-1.5-pro',
+        apiModelId: 'gemini-1.5-pro',
         name: 'Gemini 1.5 Pro',
+        displayName: 'Gemini 1.5 Pro',
         provider: 'Google Gemini',
+        publisher: 'Google',
+        category: 'vision',
         contextWindow: 2097152,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        freeEndpoint: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
-        id: 'gemini-2.0-flash',
-        name: 'Gemini 2.0 Flash',
+        id: 'gemini-1.5-flash',
+        apiModelId: 'gemini-1.5-flash',
+        name: 'Gemini 1.5 Flash',
+        displayName: 'Gemini 1.5 Flash',
         provider: 'Google Gemini',
+        publisher: 'Google',
+        category: 'vision',
         contextWindow: 1048576,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        freeEndpoint: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       }
     ],
@@ -287,7 +396,7 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     documentationUrl: 'https://docs.anthropic.com',
     authHeader: 'x-api-key',
     authPrefix: '',
-    defaultModelId: 'claude-3-5-sonnet-20241022',
+    defaultModelId: 'claude-3-7-sonnet-20250219',
     headers: {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true'
@@ -309,25 +418,61 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
 },
     fallbackModels: [
       {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
+        id: 'claude-3-7-sonnet-20250219',
+        apiModelId: 'claude-3-7-sonnet-20250219',
+        name: 'Claude 3.7 Sonnet',
+        displayName: 'Claude 3.7 Sonnet',
         provider: 'Anthropic',
+        publisher: 'Anthropic',
+        category: 'reasoning',
         contextWindow: 200000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        supportsReasoning: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'claude-3-5-sonnet-20241022',
+        apiModelId: 'claude-3-5-sonnet-20241022',
+        name: 'Claude 3.5 Sonnet',
+        displayName: 'Claude 3.5 Sonnet',
+        provider: 'Anthropic',
+        publisher: 'Anthropic',
+        category: 'vision',
+        contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'claude-3-5-haiku-20241022',
+        apiModelId: 'claude-3-5-haiku-20241022',
         name: 'Claude 3.5 Haiku',
+        displayName: 'Claude 3.5 Haiku',
         provider: 'Anthropic',
+        publisher: 'Anthropic',
+        category: 'chat',
         contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'claude-3-opus-20240229',
+        apiModelId: 'claude-3-opus-20240229',
         name: 'Claude 3 Opus',
+        displayName: 'Claude 3 Opus',
         provider: 'Anthropic',
+        publisher: 'Anthropic',
+        category: 'vision',
         contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       }
     ],
@@ -375,25 +520,60 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'gpt-4o',
+        apiModelId: 'gpt-4o',
         name: 'GPT-4o',
+        displayName: 'GPT-4o',
         provider: 'OpenAI',
+        publisher: 'OpenAI',
+        category: 'vision',
         contextWindow: 128000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'gpt-4o-mini',
+        apiModelId: 'gpt-4o-mini',
         name: 'GPT-4o Mini',
+        displayName: 'GPT-4o Mini',
         provider: 'OpenAI',
+        publisher: 'OpenAI',
+        category: 'vision',
         contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'o3-mini',
+        apiModelId: 'o3-mini',
         name: 'o3-mini',
+        displayName: 'o3-mini',
         provider: 'OpenAI',
+        publisher: 'OpenAI',
+        category: 'reasoning',
         contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'o1',
+        apiModelId: 'o1',
+        name: 'o1',
+        displayName: 'o1',
+        provider: 'OpenAI',
+        publisher: 'OpenAI',
+        category: 'reasoning',
+        contextWindow: 200000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       }
     ],
     capabilities: {
@@ -435,17 +615,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'llama-3.3-70b',
+        apiModelId: 'llama-3.3-70b',
         name: 'Llama 3.3 70B',
+        displayName: 'Llama 3.3 70B',
         provider: 'Cerebras',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 128000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'llama3.1-8b',
+        apiModelId: 'llama3.1-8b',
         name: 'Llama 3.1 8B',
+        displayName: 'Llama 3.1 8B',
         provider: 'Cerebras',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'deepseek-r1-distill-llama-70b',
+        apiModelId: 'deepseek-r1-distill-llama-70b',
+        name: 'DeepSeek R1 Distill Llama 70B',
+        displayName: 'DeepSeek R1 Distill Llama 70B',
+        provider: 'Cerebras',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
+        contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       }
     ],
@@ -489,17 +695,30 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'deepseek-chat',
+        apiModelId: 'deepseek-chat',
         name: 'DeepSeek V3',
+        displayName: 'DeepSeek V3',
         provider: 'DeepSeek',
+        publisher: 'DeepSeek',
+        category: 'chat',
         contextWindow: 64000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'deepseek-reasoner',
+        apiModelId: 'deepseek-reasoner',
         name: 'DeepSeek R1',
+        displayName: 'DeepSeek R1',
         provider: 'DeepSeek',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
         contextWindow: 64000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: false, json: true }
       }
     ],
@@ -594,6 +813,36 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+        apiModelId: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+        name: 'Llama 3.3 70B Instruct',
+        displayName: 'Llama 3.3 70B Instruct',
+        provider: 'Fireworks AI',
+        publisher: 'Meta',
+        category: 'chat',
+        contextWindow: 131072,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'accounts/fireworks/models/deepseek-r1',
+        apiModelId: 'accounts/fireworks/models/deepseek-r1',
+        name: 'DeepSeek R1',
+        displayName: 'DeepSeek R1',
+        provider: 'Fireworks AI',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
+        contextWindow: 131072,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -634,24 +883,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'sonar-pro',
+        apiModelId: 'sonar-pro',
         name: 'Sonar Pro',
+        displayName: 'Sonar Pro',
         provider: 'Perplexity',
+        publisher: 'Perplexity',
+        category: 'chat',
         contextWindow: 127000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: false, json: true }
       },
       {
         id: 'sonar',
+        apiModelId: 'sonar',
         name: 'Sonar',
+        displayName: 'Sonar',
         provider: 'Perplexity',
+        publisher: 'Perplexity',
+        category: 'chat',
         contextWindow: 127000,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: false, json: true }
       },
       {
         id: 'sonar-reasoning',
+        apiModelId: 'sonar-reasoning',
         name: 'Sonar Reasoning',
+        displayName: 'Sonar Reasoning',
         provider: 'Perplexity',
+        publisher: 'Perplexity',
+        category: 'reasoning',
         contextWindow: 127000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
         capabilities: { text: true, streaming: true, vision: false, tools: false, json: true }
       }
     ],
@@ -691,6 +959,37 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'grok-2-latest',
+        apiModelId: 'grok-2-latest',
+        name: 'Grok 2 Latest',
+        displayName: 'Grok 2 Latest',
+        provider: 'xAI (Grok)',
+        publisher: 'xAI',
+        category: 'vision',
+        contextWindow: 131072,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'grok-2-vision-1212',
+        apiModelId: 'grok-2-vision-1212',
+        name: 'Grok 2 Vision',
+        displayName: 'Grok 2 Vision',
+        provider: 'xAI (Grok)',
+        publisher: 'xAI',
+        category: 'vision',
+        contextWindow: 131072,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -727,6 +1026,49 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'mistral-large-latest',
+        apiModelId: 'mistral-large-latest',
+        name: 'Mistral Large Latest',
+        displayName: 'Mistral Large Latest',
+        provider: 'Mistral AI',
+        publisher: 'Mistral AI',
+        category: 'chat',
+        contextWindow: 128000,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'pixtral-large-latest',
+        apiModelId: 'pixtral-large-latest',
+        name: 'Pixtral Large Latest',
+        displayName: 'Pixtral Large Latest',
+        provider: 'Mistral AI',
+        publisher: 'Mistral AI',
+        category: 'vision',
+        contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'codestral-latest',
+        apiModelId: 'codestral-latest',
+        name: 'Codestral Latest',
+        displayName: 'Codestral Latest',
+        provider: 'Mistral AI',
+        publisher: 'Mistral AI',
+        category: 'chat',
+        contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -763,6 +1105,36 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'Meta-Llama-3.3-70B-Instruct',
+        apiModelId: 'Meta-Llama-3.3-70B-Instruct',
+        name: 'Meta Llama 3.3 70B Instruct',
+        displayName: 'Meta Llama 3.3 70B Instruct',
+        provider: 'SambaNova',
+        publisher: 'Meta',
+        category: 'chat',
+        contextWindow: 128000,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'DeepSeek-R1',
+        apiModelId: 'DeepSeek-R1',
+        name: 'DeepSeek R1',
+        displayName: 'DeepSeek R1',
+        provider: 'SambaNova',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
+        contextWindow: 64000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -799,6 +1171,36 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'meta-llama/Llama-3.2-3B-Instruct',
+        apiModelId: 'meta-llama/Llama-3.2-3B-Instruct',
+        name: 'Llama 3.2 3B Instruct',
+        displayName: 'Llama 3.2 3B Instruct',
+        provider: 'Hugging Face',
+        publisher: 'Meta',
+        category: 'chat',
+        contextWindow: 128000,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: false, json: false }
+      },
+      {
+        id: 'deepseek-ai/DeepSeek-R1',
+        apiModelId: 'deepseek-ai/DeepSeek-R1',
+        name: 'DeepSeek R1',
+        displayName: 'DeepSeek R1',
+        provider: 'Hugging Face',
+        publisher: 'DeepSeek',
+        category: 'reasoning',
+        contextWindow: 64000,
+        source: 'catalog',
+        supportsChat: true,
+        supportsReasoning: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: false, json: false }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -836,6 +1238,48 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "RELAY_READY",
       "corsStatus": "BLOCKED"
 },
+    fallbackModels: [
+      {
+        id: 'moonshot-v1-8k',
+        apiModelId: 'moonshot-v1-8k',
+        name: 'Moonshot V1 8K',
+        displayName: 'Moonshot V1 8K',
+        provider: 'Moonshot / Kimi',
+        publisher: 'Moonshot AI',
+        category: 'chat',
+        contextWindow: 8192,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'moonshot-v1-32k',
+        apiModelId: 'moonshot-v1-32k',
+        name: 'Moonshot V1 32K',
+        displayName: 'Moonshot V1 32K',
+        provider: 'Moonshot / Kimi',
+        publisher: 'Moonshot AI',
+        category: 'chat',
+        contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'moonshot-v1-128k',
+        apiModelId: 'moonshot-v1-128k',
+        name: 'Moonshot V1 128K',
+        displayName: 'Moonshot V1 128K',
+        provider: 'Moonshot / Kimi',
+        publisher: 'Moonshot AI',
+        category: 'chat',
+        contextWindow: 128000,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -872,6 +1316,49 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
 },
+    fallbackModels: [
+      {
+        id: 'qwen-plus',
+        apiModelId: 'qwen-plus',
+        name: 'Qwen Plus',
+        displayName: 'Qwen Plus',
+        provider: 'Alibaba DashScope (Qwen)',
+        publisher: 'Alibaba',
+        category: 'chat',
+        contextWindow: 128000,
+        isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'qwen-max',
+        apiModelId: 'qwen-max',
+        name: 'Qwen Max',
+        displayName: 'Qwen Max',
+        provider: 'Alibaba DashScope (Qwen)',
+        publisher: 'Alibaba',
+        category: 'chat',
+        contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'qvq-72b-preview',
+        apiModelId: 'qvq-72b-preview',
+        name: 'QVQ 72B Preview',
+        displayName: 'QVQ 72B Preview',
+        provider: 'Alibaba DashScope (Qwen)',
+        publisher: 'Alibaba',
+        category: 'vision',
+        contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      }
+    ],
     capabilities: {
       text: true,
       streaming: true,
@@ -911,24 +1398,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     fallbackModels: [
       {
         id: 'meta-llama/llama-3.3-70b-instruct',
+        apiModelId: 'meta-llama/llama-3.3-70b-instruct',
         name: 'Llama 3.3 70B Instruct',
+        displayName: 'Llama 3.3 70B Instruct',
         provider: 'Experiential Labs',
+        publisher: 'Meta',
+        category: 'chat',
         contextWindow: 128000,
         isDefault: true,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'deepseek/deepseek-chat',
+        apiModelId: 'deepseek/deepseek-chat',
         name: 'DeepSeek Chat (V3)',
+        displayName: 'DeepSeek Chat (V3)',
         provider: 'Experiential Labs',
+        publisher: 'DeepSeek',
+        category: 'chat',
         contextWindow: 64000,
+        source: 'catalog',
+        supportsChat: true,
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
         id: 'qwen/qwen-2.5-72b-instruct',
+        apiModelId: 'qwen/qwen-2.5-72b-instruct',
         name: 'Qwen 2.5 72B Instruct',
+        displayName: 'Qwen 2.5 72B Instruct',
         provider: 'Experiential Labs',
+        publisher: 'Alibaba',
+        category: 'vision',
         contextWindow: 32768,
+        source: 'catalog',
+        supportsChat: true,
+        supportsVision: true,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       }
     ],
@@ -1077,7 +1583,8 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
       "browser": "UNVERIFIED",
       "transport": "DIRECT_READY",
       "corsStatus": "UNKNOWN"
-},
+    },
+    fallbackModels: [],
     capabilities: {
       text: true,
       streaming: true,

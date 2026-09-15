@@ -10,6 +10,8 @@ import {
   getCachedNvidiaModels,
   setCachedNvidiaModels
 } from '../nvidia/nvidiaBuildCatalog';
+import { classifyUniversalModel } from '../modelClassifier';
+import { getCachedModels, setCachedModels } from '../modelCache';
 
 export class OpenAICompatibleAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -89,6 +91,9 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
             // Cache models on successful validation
             setCachedNvidiaModels(resolvedModels);
           }
+
+          // Store in universal multi-provider cache
+          setCachedModels(this.provider.id, resolvedModels);
 
           return {
             success: true,
@@ -225,8 +230,14 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
     const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
-    if (isNvidia && !bypassCache) {
-      const cached = getCachedNvidiaModels();
+    if (!bypassCache) {
+      if (isNvidia) {
+        const cachedNvidia = getCachedNvidiaModels();
+        if (cachedNvidia && cachedNvidia.length > 0) {
+          return cachedNvidia;
+        }
+      }
+      const cached = getCachedModels(this.provider.id);
       if (cached && cached.length > 0) {
         return cached;
       }
@@ -240,6 +251,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     if (!this.provider.modelsEndpoint) {
       return this.provider.fallbackModels || (this.provider.defaultModelId ? [{
         id: this.provider.defaultModelId,
+        apiModelId: this.provider.defaultModelId,
         name: this.provider.defaultModelId,
         provider: this.provider.name,
         isDefault: true,
@@ -258,6 +270,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       const models = this.normalizeModels(res.data);
       const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
+      setCachedModels(this.provider.id, resolved);
       if (isNvidia) {
         if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
           console.log(`[NVIDIA] Models discovered: ${resolved.length}`);
@@ -289,8 +302,6 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     const models: AIModel[] = rawList.map((item: any) => {
       const id = item.id || item.name || String(item);
       const name = item.displayName || item.name || item.id || id;
-      const hasCapArray = Array.isArray(item.capabilities);
-      const hasInputModalities = Array.isArray(item.architecture?.input_modalities);
 
       if (isNvidia) {
         const classification = classifyNvidiaModel(id, item);
@@ -324,30 +335,14 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         };
       }
 
-      const isVision = hasCapArray 
-        ? item.capabilities.includes('vision') 
-        : (hasInputModalities
-            ? item.architecture.input_modalities.includes('image')
-            : (/vision|vl|pixtral|4o|claude|gemini|llava/i.test(id) || Boolean(this.provider.capabilities.vision)));
-      const isTools = hasCapArray
-        ? item.capabilities.includes('tools')
-        : this.provider.capabilities.tools;
-      
-      return {
-        id,
-        name,
-        provider: this.provider.name,
-        description: item.description,
-        contextWindow: item.contextWindow || item.context_length || item.context_window,
-        isDefault: id === this.provider.defaultModelId,
-        capabilities: {
-          text: true,
-          streaming: this.provider.capabilities.streaming,
-          vision: isVision,
-          tools: isTools,
-          json: this.provider.capabilities.json
-        }
-      };
+      // Universal model classification for all other providers
+      return classifyUniversalModel(
+        item,
+        this.provider.id,
+        this.provider.name,
+        this.provider.capabilities,
+        this.provider.defaultModelId
+      );
     });
 
     if (isNvidia) {
@@ -364,7 +359,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
     // Filter out non-chat utility models for standard providers (embeddings, moderation, whisper, tts, dall-e)
     const chatModels = models.filter(m => 
-      !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id)
+      m.supportsChat && !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id)
     );
 
     const result = chatModels.length > 0 ? chatModels : models;
