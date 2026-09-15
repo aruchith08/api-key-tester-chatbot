@@ -17,8 +17,21 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
 
   const textPrefixRef = useRef('');
+
+  // Close attachment dropdown when clicking outside
+  useEffect(() => {
+    if (!isAttachmentOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (attachmentMenuRef.current && !attachmentMenuRef.current.contains(e.target as Node)) {
+        setIsAttachmentOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isAttachmentOpen]);
 
   const {
     apiKey,
@@ -138,7 +151,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   return (
     <div className={`w-full max-w-[760px] mx-auto transition-all duration-300 ${compact ? 'px-4' : 'px-4 sm:px-6'}`}>
       <div 
-        className={`relative bg-[#121214] border border-[#232326] hover:border-[#2C2C30] focus-within:border-[#38383E] focus-within:ring-1 focus-within:ring-white/5 rounded-2xl shadow-xl shadow-black/40 transition-all duration-200 overflow-hidden ${
+        className={`relative bg-[#121214] border border-[#232326] hover:border-[#2C2C30] focus-within:border-[#38383E] focus-within:ring-1 focus-within:ring-white/5 rounded-2xl shadow-xl shadow-black/40 transition-all duration-200 ${
           compact ? 'py-2.5 px-3.5' : 'py-3.5 px-4 sm:px-5'
         }`}
       >
@@ -209,11 +222,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
         {/* Bottom Controls Bar */}
         <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#1C1C1F]/60">
           {/* Left: Attachment + Button */}
-          <div className="relative flex items-center">
+          <div ref={attachmentMenuRef} className="relative flex items-center">
             <button
               type="button"
               onClick={() => setIsAttachmentOpen(!isAttachmentOpen)}
-              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-white/5 rounded-lg transition-colors"
+              className={`p-1.5 rounded-lg transition-colors ${
+                isAttachmentOpen 
+                  ? 'text-white bg-white/10' 
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+              }`}
               title="Add attachment"
             >
               <Plus className="w-4 h-4" />
@@ -238,7 +255,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
             {/* Attachment dropdown popover */}
             {isAttachmentOpen && (
               <div 
-                className="absolute bottom-full left-0 mb-2 w-44 bg-[#18181B] border border-[#2A2A2E] rounded-xl shadow-2xl py-1.5 z-20"
+                className="absolute bottom-full left-0 mb-2 w-48 bg-[#18181B] border border-[#2A2A2E] rounded-xl shadow-2xl py-1.5 z-50 backdrop-blur-md animate-fade-in"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
