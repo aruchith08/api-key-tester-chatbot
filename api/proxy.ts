@@ -22,10 +22,13 @@ const ALLOWED_EXACT_HOSTS = new Set([
   'api.moonshot.cn',
   'dashscope-intl.aliyuncs.com',
   'dashscope.aliyuncs.com',
+  'beta.token-router.org',
+  'token-router.org',
 ]);
 
 const ALLOWED_SUFFIXES = [
   '.experientiallabs.ai',
+  '.token-router.org',
   '.openai.com',
   '.anthropic.com',
   '.groq.com',

@@ -148,6 +148,17 @@ export class ProviderDetector {
       };
     }
 
+    // Token Router (vk_live_ prefix)
+    if (/^vk_live_[A-Za-z0-9_-]+$/.test(key) || key.startsWith('vk_live_')) {
+      const tokenRouter = PROVIDER_DEFINITIONS.find(p => p.id === 'token-router')!;
+      return {
+        provider: tokenRouter,
+        confidence: 'high',
+        candidates: [tokenRouter],
+        details: 'Recognized unique Token Router key signature (vk_live_...)'
+      };
+    }
+
     // 3. DeepSeek (sk- followed by 32 hex chars)
     if (/^sk-[a-f0-9]{32}$/.test(key)) {
       const deepseek = PROVIDER_DEFINITIONS.find(p => p.id === 'deepseek')!;

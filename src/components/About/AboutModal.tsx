@@ -181,7 +181,7 @@ export const AboutModal: React.FC = () => {
                     <span>Instant Pattern Detection</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    Heuristic regex engine identifies API key prefixes (<code className="text-neutral-300">xpl_</code>, <code className="text-neutral-300">gsk_</code>, <code className="text-neutral-300">nvapi-</code>, <code className="text-neutral-300">AIzaSy</code>, <code className="text-neutral-300">sk-ant-</code>) with deterministic high-confidence resolution.
+                    Heuristic regex engine identifies API key prefixes (<code className="text-neutral-300">vk_live_</code>, <code className="text-neutral-300">xpl_</code>, <code className="text-neutral-300">gsk_</code>, <code className="text-neutral-300">nvapi-</code>, <code className="text-neutral-300">AIzaSy</code>, <code className="text-neutral-300">sk-ant-</code>) with deterministic high-confidence resolution.
                   </p>
                 </div>
 

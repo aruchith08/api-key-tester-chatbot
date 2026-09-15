@@ -181,6 +181,19 @@ export class ProviderDetector {
       };
     }
 
+    // Token Router: distinct prefix 'vk_live_'
+    if (key.startsWith('vk_live_') || /^vk_live_[A-Za-z0-9_-]+$/.test(key)) {
+      const tokenRouter = PROVIDER_CATALOG.find(p => p.id === 'token-router')!;
+      return {
+        providerId: 'token-router',
+        provider: tokenRouter,
+        confidence: 'high',
+        candidates: [tokenRouter],
+        rationale: 'Recognized distinct Token Router API key prefix (vk_live_).',
+        reason: 'Recognized distinct Token Router API key prefix (vk_live_).'
+      };
+    }
+
     // =========================================================================
     // 2. Stage 2: Medium Confidence Heuristics
     // =========================================================================

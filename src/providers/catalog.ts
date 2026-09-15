@@ -917,6 +917,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     }
   },
   {
+    id: 'token-router',
+    name: 'Token Router',
+    description: 'OpenAI-compatible AI gateway routing inference across a distributed network of GPU providers',
+    keyPatterns: [/^vk_live_[A-Za-z0-9_-]+$/],
+    adapterType: 'openai-compatible',
+    baseUrl: 'https://beta.token-router.org/v1',
+    chatEndpoint: '/chat/completions',
+    modelsEndpoint: '/models',
+    documentationUrl: 'https://docs.token-router.org/',
+    authHeader: 'Authorization',
+    authPrefix: 'Bearer',
+    defaultModelId: 'qwen3.6-27b',
+    tier: 2,
+    
+    connectionMode: 'RELAY_REQUIRED',
+    browserCompatibility: 'BLOCKED',
+    corsStatus: 'BLOCKED',
+    recommendedTransport: 'RELAY',
+    truth: {
+      "implementation": "IMPLEMENTED",
+      "unitTests": "PASSED",
+      "realApi": "NOT_TESTED",
+      "browser": "UNVERIFIED",
+      "transport": "RELAY_REQUIRED",
+      "corsStatus": "BLOCKED"
+    },
+    fallbackModels: [],
+    capabilities: {
+      text: true,
+      streaming: true,
+      vision: true,
+      tools: true,
+      json: true,
+      fileInput: false
+    }
+  },
+  {
     id: 'custom',
     name: 'Custom Provider',
     description: 'Connect to any OpenAI-compatible API, local proxy, Ollama, or vLLM server',

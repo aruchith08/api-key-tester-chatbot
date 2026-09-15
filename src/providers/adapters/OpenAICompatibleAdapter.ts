@@ -220,21 +220,27 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
     const models: AIModel[] = rawList.map((item: any) => {
       const id = item.id || item.name || String(item);
-      const name = item.name || item.id || id;
-      const isVision = /vision|vl|pixtral|4o|claude|gemini|llava/i.test(id) || Boolean(this.provider.capabilities.vision);
+      const name = item.displayName || item.name || item.id || id;
+      const hasCapArray = Array.isArray(item.capabilities);
+      const isVision = hasCapArray 
+        ? item.capabilities.includes('vision') 
+        : (/vision|vl|pixtral|4o|claude|gemini|llava/i.test(id) || Boolean(this.provider.capabilities.vision));
+      const isTools = hasCapArray
+        ? item.capabilities.includes('tools')
+        : this.provider.capabilities.tools;
       
       return {
         id,
         name,
         provider: this.provider.name,
         description: item.description,
-        contextWindow: item.context_length || item.context_window,
+        contextWindow: item.contextWindow || item.context_length || item.context_window,
         isDefault: id === this.provider.defaultModelId,
         capabilities: {
           text: true,
           streaming: this.provider.capabilities.streaming,
           vision: isVision,
-          tools: this.provider.capabilities.tools,
+          tools: isTools,
           json: this.provider.capabilities.json
         }
       };

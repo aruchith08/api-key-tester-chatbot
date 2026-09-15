@@ -57,6 +57,9 @@ async function main() {
     const { runExperientialAdapterTests } = await server.ssrLoadModule('./tests/adapters/experiential.test.ts');
     await runExperientialAdapterTests(server, assert);
 
+    const { runTokenRouterAdapterTests } = await server.ssrLoadModule('./tests/adapters/token-router.test.ts');
+    await runTokenRouterAdapterTests(server, assert);
+
     // 3. Normalization suite
     const { runErrorNormalizationTests } = await server.ssrLoadModule('./tests/normalization/errors.test.ts');
     await runErrorNormalizationTests(server, assert);
