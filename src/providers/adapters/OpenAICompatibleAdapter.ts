@@ -222,9 +222,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       const id = item.id || item.name || String(item);
       const name = item.displayName || item.name || item.id || id;
       const hasCapArray = Array.isArray(item.capabilities);
+      const hasInputModalities = Array.isArray(item.architecture?.input_modalities);
       const isVision = hasCapArray 
         ? item.capabilities.includes('vision') 
-        : (/vision|vl|pixtral|4o|claude|gemini|llava/i.test(id) || Boolean(this.provider.capabilities.vision));
+        : (hasInputModalities
+            ? item.architecture.input_modalities.includes('image')
+            : (/vision|vl|pixtral|4o|claude|gemini|llava/i.test(id) || Boolean(this.provider.capabilities.vision)));
       const isTools = hasCapArray
         ? item.capabilities.includes('tools')
         : this.provider.capabilities.tools;

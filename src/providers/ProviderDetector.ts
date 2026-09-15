@@ -159,6 +159,17 @@ export class ProviderDetector {
       };
     }
 
+    // BazaarLink (sk-bl- prefix)
+    if (/^sk-bl-[A-Za-z0-9_-]+$/.test(key) || key.startsWith('sk-bl-')) {
+      const bazaarlink = PROVIDER_DEFINITIONS.find(p => p.id === 'bazaarlink')!;
+      return {
+        provider: bazaarlink,
+        confidence: 'high',
+        candidates: [bazaarlink],
+        details: 'Recognized unique BazaarLink key signature (sk-bl-...)'
+      };
+    }
+
     // 3. DeepSeek (sk- followed by 32 hex chars)
     if (/^sk-[a-f0-9]{32}$/.test(key)) {
       const deepseek = PROVIDER_DEFINITIONS.find(p => p.id === 'deepseek')!;

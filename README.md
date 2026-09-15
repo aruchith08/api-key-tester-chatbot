@@ -2,9 +2,9 @@
 
 # ⚡ ARH — AI API Testing Ground & Agent Sandbox
 
-**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 20+ AI providers instantly.**
+**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 21+ AI providers instantly.**
 
-[![Tests](https://img.shields.io/badge/tests-241%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
+[![Tests](https://img.shields.io/badge/tests-279%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-cyan?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?style=flat-square&logo=vite)](https://vitejs.dev/)
@@ -25,7 +25,7 @@
 
 **ARH (API Testing Ground & Agent Sandbox)** is a developer-first AI playground designed to test API keys across any major foundation model provider without setup friction, backend databases, or complex configurations. 
 
-Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Token Router, Experiential Labs, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
+Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Token Router, BazaarLink, Experiential Labs, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
 
 ---
 
@@ -81,7 +81,7 @@ Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, O
 
 ## 🧠 Supported Providers Matrix
 
-ARH includes built-in adapters and model normalization for 20 industry providers:
+ARH includes built-in adapters and model normalization for 21 industry providers:
 
 | Provider | Key Signature | Connection Mode | Dynamic Models | Live Streaming | Tool Calling / Agent |
 | :--- | :--- | :--- | :--- | :---: | :---: |
@@ -96,6 +96,7 @@ ARH includes built-in adapters and model normalization for 20 industry providers
 | **Fireworks AI** | `fw_...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Cerebras** | `csk-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Token Router** | `vk_live_...` | Proxy Fallback (CORS) | ✅ Yes | ✅ Yes | ✅ Yes |
+| **BazaarLink** | `sk-bl-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Experiential Labs** | `xpl_...` (40 hex) | Direct / Proxy | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Perplexity AI** | `pplx-...` | Proxy Fallback (CORS) | ✅ Fallback | ✅ Yes | ✅ Fallback |
 | **xAI (Grok)** | `xai-...` | Direct Browser | ✅ Yes | ✅ Yes | ✅ Yes |

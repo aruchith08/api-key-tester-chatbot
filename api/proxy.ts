@@ -24,11 +24,14 @@ const ALLOWED_EXACT_HOSTS = new Set([
   'dashscope.aliyuncs.com',
   'beta.token-router.org',
   'token-router.org',
+  'api.bazaarlink.ai',
+  'bazaarlink.ai',
 ]);
 
 const ALLOWED_SUFFIXES = [
   '.experientiallabs.ai',
   '.token-router.org',
+  '.bazaarlink.ai',
   '.openai.com',
   '.anthropic.com',
   '.groq.com',

@@ -60,6 +60,9 @@ async function main() {
     const { runTokenRouterAdapterTests } = await server.ssrLoadModule('./tests/adapters/token-router.test.ts');
     await runTokenRouterAdapterTests(server, assert);
 
+    const { runBazaarLinkAdapterTests } = await server.ssrLoadModule('./tests/adapters/bazaarlink.test.ts');
+    await runBazaarLinkAdapterTests(server, assert);
+
     // 3. Normalization suite
     const { runErrorNormalizationTests } = await server.ssrLoadModule('./tests/normalization/errors.test.ts');
     await runErrorNormalizationTests(server, assert);

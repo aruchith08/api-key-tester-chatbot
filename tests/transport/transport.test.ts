@@ -69,9 +69,18 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
     assert(nvidiaStrat.badge.text.includes('Connection Unknown'), 'NVIDIA displays Connection Unknown badge');
   }
 
+  const bazaarlink = PROVIDER_CATALOG.find(p => p.id === 'bazaarlink');
+  assert(!!bazaarlink, 'Found BazaarLink in catalog');
+  if (bazaarlink) {
+    const blStrat = resolveConnectionStrategy(bazaarlink);
+    assert(blStrat.mode === 'DIRECT', 'BazaarLink resolves to DIRECT mode');
+    assert(blStrat.transport === 'DIRECT', 'BazaarLink uses DIRECT transport');
+    assert(blStrat.badge.text.includes('Direct Connection'), 'BazaarLink displays Direct Connection badge');
+  }
+
   // 4. Provider Truth Model Integrity
   console.log('\n--- Provider Truth Model Integrity ---');
-  assert(PROVIDER_CATALOG.length === 20, `Catalog contains all 20 providers (found ${PROVIDER_CATALOG.length})`);
+  assert(PROVIDER_CATALOG.length === 21, `Catalog contains all 21 providers (found ${PROVIDER_CATALOG.length})`);
 
   let allHaveTruth = true;
   let noFalselyClaimed = true;
@@ -92,7 +101,7 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
     }
   }
 
-  assert(allHaveTruth, 'All 20 providers have strongly-typed truth model metadata');
+  assert(allHaveTruth, 'All 21 providers have strongly-typed truth model metadata');
   assert(noFalselyClaimed, 'Zero providers falsely claim CONFIRMED or BROWSER_VERIFIED without live test');
   assert(allNotTested, 'All providers start honestly at realApi: NOT_TESTED');
 }

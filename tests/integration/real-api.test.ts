@@ -14,7 +14,8 @@ export async function runRealApiIntegrationTests(
     { providerId: 'nvidia', envVar: 'ARH_TEST_NVIDIA_KEY', name: 'NVIDIA NIM' },
     { providerId: 'openrouter', envVar: 'ARH_TEST_OPENROUTER_KEY', name: 'OpenRouter' },
     { providerId: 'anthropic', envVar: 'ARH_TEST_ANTHROPIC_KEY', name: 'Anthropic Claude' },
-    { providerId: 'openai', envVar: 'ARH_TEST_OPENAI_KEY', name: 'OpenAI' }
+    { providerId: 'openai', envVar: 'ARH_TEST_OPENAI_KEY', name: 'OpenAI' },
+    { providerId: 'bazaarlink', envVar: 'ARH_TEST_BAZAARLINK_KEY', name: 'BazaarLink' }
   ];
 
   for (const target of targets) {

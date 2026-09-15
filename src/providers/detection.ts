@@ -194,6 +194,19 @@ export class ProviderDetector {
       };
     }
 
+    // BazaarLink: distinct prefix 'sk-bl-'
+    if (key.startsWith('sk-bl-') || /^sk-bl-[A-Za-z0-9_-]+$/.test(key)) {
+      const bazaarlink = PROVIDER_CATALOG.find(p => p.id === 'bazaarlink')!;
+      return {
+        providerId: 'bazaarlink',
+        provider: bazaarlink,
+        confidence: 'high',
+        candidates: [bazaarlink],
+        rationale: 'Recognized distinct BazaarLink API key prefix (sk-bl-).',
+        reason: 'Recognized distinct BazaarLink API key prefix (sk-bl-).'
+      };
+    }
+
     // =========================================================================
     // 2. Stage 2: Medium Confidence Heuristics
     // =========================================================================

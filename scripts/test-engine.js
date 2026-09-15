@@ -33,7 +33,7 @@ async function runTests() {
     console.log('[1] Testing Provider Catalog Integrity...');
     assert(Array.isArray(PROVIDER_CATALOG) && PROVIDER_CATALOG.length >= 18, `Catalog has ${PROVIDER_CATALOG?.length} providers (expected >= 18)`);
     
-    const requiredProviders = ['groq', 'nvidia-nim', 'openrouter', 'gemini', 'anthropic', 'openai', 'cerebras', 'deepseek', 'together', 'fireworks', 'perplexity', 'xai', 'mistral', 'sambanova', 'huggingface', 'moonshot', 'qwen', 'experiential', 'token-router', 'custom'];
+    const requiredProviders = ['groq', 'nvidia-nim', 'openrouter', 'gemini', 'anthropic', 'openai', 'cerebras', 'deepseek', 'together', 'fireworks', 'perplexity', 'xai', 'mistral', 'sambanova', 'huggingface', 'moonshot', 'qwen', 'experiential', 'token-router', 'bazaarlink', 'custom'];
     for (const id of requiredProviders) {
       const p = PROVIDER_CATALOG.find(x => x.id === id || (id === 'nvidia' && x.id === 'nvidia-nim'));
       assert(p !== undefined, `Provider '${id}' exists in catalog`);
@@ -111,6 +111,11 @@ async function runTests() {
     const trKey = 'vk_live_' + 'abcdef0123456789'.repeat(2);
     const trRes = ProviderDetector.detect(trKey);
     assert(trRes.confidence === 'high' && trRes.provider?.id === 'token-router', 'Token Router key detected with high confidence');
+
+    // BazaarLink: sk-bl-...
+    const blKey = 'sk-bl-' + 'abcdef0123456789'.repeat(2);
+    const blRes = ProviderDetector.detect(blKey);
+    assert(blRes.confidence === 'high' && blRes.provider?.id === 'bazaarlink', 'BazaarLink key detected with high confidence');
 
     // DeepSeek: sk- + 32 hex chars (distinct 35 char length)
     const dsKey = 'sk-' + '1234567890abcdef1234567890abcdef';

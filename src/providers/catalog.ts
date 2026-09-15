@@ -954,6 +954,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     }
   },
   {
+    id: 'bazaarlink',
+    name: 'BazaarLink',
+    description: 'Unified OpenAI-compatible AI gateway providing access to multiple AI model providers through one API',
+    keyPatterns: [/^sk-bl-[A-Za-z0-9_-]+$/],
+    adapterType: 'openai-compatible',
+    baseUrl: 'https://api.bazaarlink.ai/v1',
+    chatEndpoint: '/chat/completions',
+    modelsEndpoint: '/models',
+    documentationUrl: 'https://bazaarlink.ai/en/docs',
+    authHeader: 'Authorization',
+    authPrefix: 'Bearer',
+    defaultModelId: 'auto',
+    tier: 2,
+    
+    connectionMode: 'DIRECT',
+    browserCompatibility: 'COMPATIBLE',
+    corsStatus: 'SUPPORTED',
+    recommendedTransport: 'DIRECT',
+    truth: {
+      "implementation": "IMPLEMENTED",
+      "unitTests": "PASSED",
+      "realApi": "NOT_TESTED",
+      "browser": "UNVERIFIED",
+      "transport": "DIRECT_READY",
+      "corsStatus": "SUPPORTED"
+    },
+    fallbackModels: [],
+    capabilities: {
+      text: true,
+      streaming: true,
+      vision: true,
+      tools: true,
+      json: true,
+      fileInput: false
+    }
+  },
+  {
     id: 'custom',
     name: 'Custom Provider',
     description: 'Connect to any OpenAI-compatible API, local proxy, Ollama, or vLLM server',
