@@ -170,6 +170,17 @@ export class ProviderDetector {
       };
     }
 
+    // NRouter (sk-nrouter- prefix)
+    if (/^sk-nrouter-[A-Za-z0-9_-]+$/.test(key) || key.startsWith('sk-nrouter-')) {
+      const nrouter = PROVIDER_DEFINITIONS.find(p => p.id === 'nrouter')!;
+      return {
+        provider: nrouter,
+        confidence: 'high',
+        candidates: [nrouter],
+        details: 'Recognized unique NRouter key signature (sk-nrouter-...)'
+      };
+    }
+
     // 3. DeepSeek (sk- followed by 32 hex chars)
     if (/^sk-[a-f0-9]{32}$/.test(key)) {
       const deepseek = PROVIDER_DEFINITIONS.find(p => p.id === 'deepseek')!;

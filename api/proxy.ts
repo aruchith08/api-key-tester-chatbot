@@ -26,12 +26,15 @@ const ALLOWED_EXACT_HOSTS = new Set([
   'token-router.org',
   'api.bazaarlink.ai',
   'bazaarlink.ai',
+  'api.nrouter.ai',
+  'nrouter.ai',
 ]);
 
 const ALLOWED_SUFFIXES = [
   '.experientiallabs.ai',
   '.token-router.org',
   '.bazaarlink.ai',
+  '.nrouter.ai',
   '.openai.com',
   '.anthropic.com',
   '.groq.com',

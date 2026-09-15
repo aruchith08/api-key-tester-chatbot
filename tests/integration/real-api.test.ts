@@ -15,7 +15,8 @@ export async function runRealApiIntegrationTests(
     { providerId: 'openrouter', envVar: 'ARH_TEST_OPENROUTER_KEY', name: 'OpenRouter' },
     { providerId: 'anthropic', envVar: 'ARH_TEST_ANTHROPIC_KEY', name: 'Anthropic Claude' },
     { providerId: 'openai', envVar: 'ARH_TEST_OPENAI_KEY', name: 'OpenAI' },
-    { providerId: 'bazaarlink', envVar: 'ARH_TEST_BAZAARLINK_KEY', name: 'BazaarLink' }
+    { providerId: 'bazaarlink', envVar: 'ARH_TEST_BAZAARLINK_KEY', name: 'BazaarLink' },
+    { providerId: 'nrouter', envVar: 'ARH_TEST_NROUTER_KEY', name: 'NRouter' }
   ];
 
   for (const target of targets) {

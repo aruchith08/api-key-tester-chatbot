@@ -55,6 +55,10 @@ export async function runDetectionTests(server: any, assert: (cond: boolean, msg
   const blRes = ProviderDetector.detect(blKey);
   assert(blRes.confidence === 'high' && blRes.provider?.id === 'bazaarlink', 'BazaarLink key (sk-bl-) detected with high confidence');
 
+  const nrKey = 'sk-nrouter-' + 'abcdef0123456789_-'.repeat(2);
+  const nrRes = ProviderDetector.detect(nrKey);
+  assert(nrRes.confidence === 'high' && nrRes.provider?.id === 'nrouter', 'NRouter key (sk-nrouter-) detected with high confidence');
+
   // 2. Medium confidence heuristic signatures
   const deepseekKey = 'sk-' + '1234567890abcdef1234567890abcdef';
   const dsRes = ProviderDetector.detect(deepseekKey);

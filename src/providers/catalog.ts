@@ -991,6 +991,43 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
     }
   },
   {
+    id: 'nrouter',
+    name: 'NRouter',
+    description: 'Enterprise-grade LLM gateway with smart model routing, AI guardrails, and budget management',
+    keyPatterns: [/^sk-nrouter-[A-Za-z0-9_-]+$/],
+    adapterType: 'openai-compatible',
+    baseUrl: 'https://api.nrouter.ai/v1',
+    chatEndpoint: '/chat/completions',
+    modelsEndpoint: '/models',
+    documentationUrl: 'https://nrouter.ai/docs',
+    authHeader: 'Authorization',
+    authPrefix: 'Bearer',
+    defaultModelId: 'openai/gpt-4o',
+    tier: 2,
+    
+    connectionMode: 'RELAY_REQUIRED',
+    browserCompatibility: 'BLOCKED',
+    corsStatus: 'BLOCKED',
+    recommendedTransport: 'RELAY',
+    truth: {
+      "implementation": "IMPLEMENTED",
+      "unitTests": "PASSED",
+      "realApi": "NOT_TESTED",
+      "browser": "UNVERIFIED",
+      "transport": "RELAY_REQUIRED",
+      "corsStatus": "BLOCKED"
+    },
+    fallbackModels: [],
+    capabilities: {
+      text: true,
+      streaming: true,
+      vision: true,
+      tools: true,
+      json: true,
+      fileInput: false
+    }
+  },
+  {
     id: 'custom',
     name: 'Custom Provider',
     description: 'Connect to any OpenAI-compatible API, local proxy, Ollama, or vLLM server',

@@ -63,6 +63,9 @@ async function main() {
     const { runBazaarLinkAdapterTests } = await server.ssrLoadModule('./tests/adapters/bazaarlink.test.ts');
     await runBazaarLinkAdapterTests(server, assert);
 
+    const { runNRouterAdapterTests } = await server.ssrLoadModule('./tests/adapters/nrouter.test.ts');
+    await runNRouterAdapterTests(server, assert);
+
     // 3. Normalization suite
     const { runErrorNormalizationTests } = await server.ssrLoadModule('./tests/normalization/errors.test.ts');
     await runErrorNormalizationTests(server, assert);

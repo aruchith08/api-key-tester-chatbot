@@ -78,9 +78,18 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
     assert(blStrat.badge.text.includes('Direct Connection'), 'BazaarLink displays Direct Connection badge');
   }
 
+  const nrouter = PROVIDER_CATALOG.find(p => p.id === 'nrouter');
+  assert(!!nrouter, 'Found NRouter in catalog');
+  if (nrouter) {
+    const nrStrat = resolveConnectionStrategy(nrouter);
+    assert(nrStrat.mode === 'RELAY_REQUIRED', 'NRouter resolves to RELAY_REQUIRED mode');
+    assert(nrStrat.transport === 'RELAY', 'NRouter uses RELAY transport');
+    assert(nrStrat.badge.text.includes('Relay Required'), 'NRouter displays Relay Required badge');
+  }
+
   // 4. Provider Truth Model Integrity
   console.log('\n--- Provider Truth Model Integrity ---');
-  assert(PROVIDER_CATALOG.length === 21, `Catalog contains all 21 providers (found ${PROVIDER_CATALOG.length})`);
+  assert(PROVIDER_CATALOG.length === 22, `Catalog contains all 22 providers (found ${PROVIDER_CATALOG.length})`);
 
   let allHaveTruth = true;
   let noFalselyClaimed = true;
@@ -101,7 +110,7 @@ export async function runTransportTests(server: any, assert: (cond: boolean, msg
     }
   }
 
-  assert(allHaveTruth, 'All 21 providers have strongly-typed truth model metadata');
+  assert(allHaveTruth, 'All 22 providers have strongly-typed truth model metadata');
   assert(noFalselyClaimed, 'Zero providers falsely claim CONFIRMED or BROWSER_VERIFIED without live test');
   assert(allNotTested, 'All providers start honestly at realApi: NOT_TESTED');
 }

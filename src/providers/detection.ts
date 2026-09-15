@@ -207,6 +207,19 @@ export class ProviderDetector {
       };
     }
 
+    // NRouter: distinct prefix 'sk-nrouter-'
+    if (key.startsWith('sk-nrouter-') || /^sk-nrouter-[A-Za-z0-9_-]+$/.test(key)) {
+      const nrouter = PROVIDER_CATALOG.find(p => p.id === 'nrouter')!;
+      return {
+        providerId: 'nrouter',
+        provider: nrouter,
+        confidence: 'high',
+        candidates: [nrouter],
+        rationale: 'Recognized distinct NRouter API key prefix (sk-nrouter-).',
+        reason: 'Recognized distinct NRouter API key prefix (sk-nrouter-).'
+      };
+    }
+
     // =========================================================================
     // 2. Stage 2: Medium Confidence Heuristics
     // =========================================================================
