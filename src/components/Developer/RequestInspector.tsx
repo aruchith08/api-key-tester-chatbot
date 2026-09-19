@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { InspectorRequestData } from '../../types/capabilities';
 import { sanitizeHeaders, sanitizeUrl } from '../../utils/maskApiKey';
 import { useAppStore } from '../../store/appStore';
+import { getRuntimeModelId } from '../../types/provider';
 import { Copy, Check, Radio } from 'lucide-react';
 
 interface RequestInspectorProps {
@@ -48,7 +49,7 @@ export const RequestInspector: React.FC<RequestInspectorProps> = ({ data }) => {
           <span className="text-white font-medium">{selectedProvider?.name || 'Unknown'}</span>
           <span className="text-neutral-600">•</span>
           <span className="text-neutral-400">Model:</span>
-          <span className="text-neutral-200 font-mono text-[11px]">{selectedModel?.id || 'default'}</span>
+          <span className="text-neutral-200 font-mono text-[11px]">{getRuntimeModelId(selectedModel, 'default')}</span>
         </div>
 
         <div className="flex items-center gap-1.5">

@@ -189,9 +189,33 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? models.filter(m => !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id))
           : models);
 
-    let chosen = defaultModel;
+    const currentSelected = get().selectedModel;
+    let chosen: Model | null = defaultModel;
+
+    // 1. Reconcile with existing selection: preserve user's selected model across model refreshes
+    if (!chosen && currentSelected) {
+      chosen = pool.find(m => 
+        (m.id && (m.id === currentSelected.id || m.id === currentSelected.apiModelId)) ||
+        (m.apiModelId && (m.apiModelId === currentSelected.id || m.apiModelId === currentSelected.apiModelId)) ||
+        (m.name && currentSelected.name && m.name.toLowerCase() === currentSelected.name.toLowerCase())
+      ) || null;
+    }
+
+    // 2. If no prior selection, prefer provider defaultModelId
     if (!chosen && pool.length > 0) {
-      chosen = pool.find(m => m.isDefault) || pool.find(m => m.supportsChat && m.capabilities?.streaming) || pool.find(m => m.supportsChat) || pool[0];
+      const providerDefaultId = get().selectedProvider?.defaultModelId;
+      if (providerDefaultId) {
+        chosen = pool.find(m => m.id === providerDefaultId || m.apiModelId === providerDefaultId) || null;
+      }
+    }
+
+    // 3. Fallback: isDefault, or verified chat model (avoiding 01-ai/yi-large), or first chat model
+    if (!chosen && pool.length > 0) {
+      chosen = pool.find(m => m.isDefault) || 
+               pool.find(m => m.supportsChat && !m.id.startsWith('01-ai/')) ||
+               pool.find(m => m.supportsChat && m.capabilities?.streaming) || 
+               pool.find(m => m.supportsChat) || 
+               pool[0];
     }
     set({ models: pool, selectedModel: chosen, modelSource: source });
   },

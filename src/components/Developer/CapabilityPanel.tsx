@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ProviderRegistry } from '../../providers/registry';
+import { getRuntimeModelId } from '../../types/provider';
 import { CheckCircle2, XCircle, HelpCircle, Play, Loader2 } from 'lucide-react';
 
 export const CapabilityPanel: React.FC = () => {
@@ -48,7 +49,7 @@ export const CapabilityPanel: React.FC = () => {
       const testPrompt = "Return ONLY a valid raw JSON object with keys: name (string), age (number), country (string). Do not write explanations or markdown blocks.";
       const res = await adapter.chat({
         apiKey,
-        model: selectedModel?.id || selectedProvider.defaultModelId || 'default',
+        model: getRuntimeModelId(selectedModel, selectedProvider.defaultModelId || 'default'),
         messages: [
           { id: 'test_1', role: 'user', content: testPrompt, timestamp: Date.now() }
         ]
@@ -92,7 +93,7 @@ export const CapabilityPanel: React.FC = () => {
       const testPrompt = `Simulate a function call for the tool 'get_weather' with parameter location: 'Tokyo'. Format your response as: CALL: get_weather({"location": "Tokyo"}).`;
       const res = await adapter.chat({
         apiKey,
-        model: selectedModel?.id || selectedProvider.defaultModelId || 'default',
+        model: getRuntimeModelId(selectedModel, selectedProvider.defaultModelId || 'default'),
         messages: [
           { id: 'tool_test', role: 'user', content: testPrompt, timestamp: Date.now() }
         ]
@@ -147,7 +148,7 @@ export const CapabilityPanel: React.FC = () => {
       {/* Capability matrix */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between text-[11px] text-neutral-400 px-1 font-mono">
-          <span>Model: <span className="text-white">{selectedModel?.id || 'default'}</span></span>
+          <span>Model: <span className="text-white">{getRuntimeModelId(selectedModel, 'default')}</span></span>
           <span className="text-neutral-500">Provider: {selectedProvider?.name || 'None'}</span>
         </div>
 

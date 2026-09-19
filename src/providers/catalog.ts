@@ -156,6 +156,23 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
         capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       },
       {
+        id: 'moonshotai/kimi-k3',
+        apiModelId: 'moonshotai/kimi-k3',
+        name: 'Kimi K3',
+        displayName: 'Kimi K3',
+        provider: 'NVIDIA NIM',
+        publisher: 'Moonshot AI',
+        category: 'reasoning',
+        description: 'Catalog model — availability not verified',
+        source: 'catalog',
+        availability: 'free-endpoint',
+        freeEndpoint: true,
+        supportsChat: true,
+        supportsReasoning: true,
+        contextWindow: 131072,
+        capabilities: { text: true, streaming: true, vision: false, tools: false, json: true }
+      },
+      {
         id: 'meta/llama-3.2-90b-vision-instruct',
         apiModelId: 'meta/llama-3.2-90b-vision-instruct',
         name: 'Llama 3.2 90B Vision Instruct',

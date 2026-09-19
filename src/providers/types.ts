@@ -217,3 +217,13 @@ export interface ChatParams {
   onResponseInspector?: (res: InspectorResponseData) => void;
   onMetrics?: (metrics: PerformanceMetricsData) => void;
 }
+
+/**
+ * Canonical helper to retrieve the exact runtime API model ID from any model object
+ */
+export function getRuntimeModelId(
+  model?: { id?: string; apiModelId?: string } | null,
+  fallbackId: string = 'default'
+): string {
+  return model?.apiModelId || model?.id || fallbackId;
+}

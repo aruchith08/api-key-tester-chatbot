@@ -61,12 +61,12 @@ export class DirectTransport implements AITransport {
         headersMap[key.toLowerCase()] = val;
       });
 
+      const rawText = await res.text().catch(() => '');
       let data: any;
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        data = await res.json();
-      } else {
-        data = await res.text();
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = rawText;
       }
 
       if (!res.ok) {
@@ -137,16 +137,18 @@ export class DirectTransport implements AITransport {
       }
 
       if (!res.ok) {
+        const rawErrText = await res.text().catch(() => '');
         let errData: any;
         try {
-          errData = await res.json();
+          errData = rawErrText ? JSON.parse(rawErrText) : null;
         } catch {
-          errData = await res.text();
+          errData = rawErrText;
         }
         const normalized = normalizeError(errData, res.status);
         const err: any = new Error(normalized.message);
         err.status = res.status;
         err.normalized = normalized;
+        err.data = errData;
         throw err;
       }
 

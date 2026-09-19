@@ -5,6 +5,7 @@ import { findExecutableFileScript } from '../utils/codeDetector';
 import { sandboxRunner } from '../sandbox/sandboxRunner';
 import { OPENAI_AGENT_TOOLS, parseToolArguments } from '../sandbox/agentTools';
 import type { MessageAttachment, ToolCall } from '../types/chat';
+import { getRuntimeModelId } from '../types/provider';
 import { invalidateNvidiaCache } from '../providers/nvidia/nvidiaBuildCatalog';
 
 export function useChat() {
@@ -41,7 +42,7 @@ export function useChat() {
     }
 
     const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
-    let targetModel = selectedModel?.apiModelId || selectedModel?.id || selectedProvider.defaultModelId || 'default';
+    let targetModel = getRuntimeModelId(selectedModel, selectedProvider.defaultModelId || 'default');
 
     // Model existence check before request dispatch (Section 20 & 31)
     const isNvidia = selectedProvider.id === 'nvidia' || selectedProvider.id === 'nvidia-nim';
@@ -49,25 +50,40 @@ export function useChat() {
       const currentModels = useAppStore.getState().models;
       const existsInCurrent = currentModels.some(m => m.id === targetModel || m.apiModelId === targetModel);
       if (currentModels.length > 0 && !existsInCurrent) {
-        showNotification('This NVIDIA model is no longer available. Refreshing available models...');
+        showNotification('Refreshing available NVIDIA models...');
         try {
           invalidateNvidiaCache();
           const freshModels = await adapter.getModels(apiKey, true);
-          useAppStore.getState().setModels(freshModels, null, 'live');
+          useAppStore.getState().setModels(freshModels, selectedModel, 'live');
           const stillExists = freshModels.find(m => m.id === targetModel || m.apiModelId === targetModel);
           if (stillExists) {
-            targetModel = stillExists.apiModelId || stillExists.id;
+            targetModel = getRuntimeModelId(stillExists, targetModel);
             useAppStore.getState().setSelectedModel(stillExists);
           } else {
-            const fallback = freshModels.find(m => m.supportsChat && m.id) || freshModels[0];
+            const fallback = 
+              freshModels.find(m => m.id === selectedProvider.defaultModelId || m.apiModelId === selectedProvider.defaultModelId) ||
+              freshModels.find(m => m.isDefault) ||
+              freshModels.find(m => (m.id.includes('llama-3.2-11b-vision') || m.id.includes('llama-3.1-8b') || m.id.includes('nemotron-70b')) && m.supportsChat) ||
+              freshModels.find(m => m.supportsChat && !m.id.startsWith('01-ai/')) ||
+              freshModels.find(m => m.supportsChat) ||
+              freshModels[0];
             if (fallback) {
-              targetModel = fallback.apiModelId || fallback.id;
+              targetModel = getRuntimeModelId(fallback, targetModel);
               useAppStore.getState().setSelectedModel(fallback);
             }
           }
         } catch (e) {
           // Continue with fallback
         }
+      }
+
+      if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+        console.log('[NVIDIA] Chat Dispatch:', {
+          selectedName: selectedModel?.name,
+          selectedId: selectedModel?.id,
+          selectedApiModelId: selectedModel?.apiModelId,
+          targetModel
+        });
       }
     }
 

@@ -19,3 +19,5 @@ export type {
   ChatParams
 } from '../providers/types';
 
+export { getRuntimeModelId } from '../providers/types';
+

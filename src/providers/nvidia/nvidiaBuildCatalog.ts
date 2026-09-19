@@ -653,7 +653,10 @@ export function classifyNvidiaModel(apiModelId: string, metadata?: any): Partial
   let supportsReasoning = curated?.supportsReasoning ?? false;
 
   if (!curated) {
-    if (/embed|similarity|retriever/i.test(idLower)) {
+    if (/01-ai\/yi-large/i.test(idLower)) {
+      category = 'other';
+      supportsChat = false;
+    } else if (/embed|similarity|retriever/i.test(idLower)) {
       category = 'embedding';
       supportsChat = false;
     } else if (/guard|safety|moderation|detector|control/i.test(idLower)) {
@@ -727,11 +730,11 @@ export function classifyNvidiaModel(apiModelId: string, metadata?: any): Partial
  */
 export function isNvidiaChatCompatible(model: AIModel): boolean {
   if (model.supportsChat === false) return false;
-  if (model.category && ['embedding', 'audio', 'translation', 'safety', 'autonomous-driving', 'optimization'].includes(model.category)) {
+  if (model.category && ['embedding', 'audio', 'translation', 'safety', 'autonomous-driving', 'optimization', 'other'].includes(model.category)) {
     return false;
   }
   // Filter out explicit non-chat patterns in ID (ensuring \bising\b or ising- is used so aisingapore is preserved)
-  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|\bising\b|ising-|bevformer|sparsedrive/i.test(model.id)) {
+  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|\bising\b|ising-|bevformer|sparsedrive|01-ai\/yi-large/i.test(model.id)) {
     return false;
   }
   return true;
