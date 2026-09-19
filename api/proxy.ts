@@ -125,17 +125,18 @@ export default async function handler(req: Request): Promise<Response> {
   const forwardHeaders: Record<string, string> = {};
   req.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    if (!['host', 'connection', 'content-length', 'origin', 'referer'].includes(lower)) {
+    if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower)) {
       forwardHeaders[key] = value;
     }
   });
 
   try {
     const isBodyAllowed = req.method !== 'GET' && req.method !== 'HEAD';
+    const bodyBuffer = isBodyAllowed ? await req.arrayBuffer() : undefined;
     const upstreamRes = await fetch(targetUrl, {
       method: req.method,
       headers: forwardHeaders,
-      body: isBodyAllowed ? req.body : undefined,
+      body: bodyBuffer,
     });
 
     const resHeaders: Record<string, string> = {
@@ -144,7 +145,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     upstreamRes.headers.forEach((val, key) => {
       const lower = key.toLowerCase();
-      if (!['content-length', 'transfer-encoding', 'connection'].includes(lower)) {
+      if (!['content-length', 'transfer-encoding', 'connection', 'content-encoding'].includes(lower)) {
         resHeaders[key] = val;
       }
     });

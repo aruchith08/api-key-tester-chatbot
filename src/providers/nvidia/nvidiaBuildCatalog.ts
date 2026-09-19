@@ -733,8 +733,8 @@ export function isNvidiaChatCompatible(model: AIModel): boolean {
   if (model.category && ['embedding', 'audio', 'translation', 'safety', 'autonomous-driving', 'optimization', 'other'].includes(model.category)) {
     return false;
   }
-  // Filter out explicit non-chat patterns in ID (ensuring \bising\b or ising- is used so aisingapore is preserved)
-  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|\bising\b|ising-|bevformer|sparsedrive|01-ai\/yi-large/i.test(model.id)) {
+  // Filter out explicit non-chat patterns and retired endpoints in ID (ensuring \bising\b or ising- is used so aisingapore is preserved)
+  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|\bising\b|ising-|bevformer|sparsedrive|01-ai\/yi-large|llama-3\.1-8b-instruct/i.test(model.id)) {
     return false;
   }
   return true;

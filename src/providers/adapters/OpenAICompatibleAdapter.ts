@@ -408,7 +408,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
           });
           continue;
         }
-        if (!msg.content) continue;
+        if (!msg.content || (msg.error && !msg.content.trim())) continue;
       }
 
       if (msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && canVision) {
@@ -430,7 +430,28 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       }
     }
 
-    return formatted;
+    // Coalesce consecutive user turns to satisfy strict OpenAI / NIM API constraints
+    const sanitized: any[] = [];
+    for (const item of formatted) {
+      if (item.role === 'user' && sanitized.length > 0 && sanitized[sanitized.length - 1].role === 'user') {
+        const prev = sanitized[sanitized.length - 1];
+        if (typeof prev.content === 'string' && typeof item.content === 'string') {
+          prev.content = `${prev.content}\n\n${item.content}`;
+        } else if (Array.isArray(prev.content) && Array.isArray(item.content)) {
+          prev.content = [...prev.content, ...item.content];
+        } else if (typeof prev.content === 'string' && Array.isArray(item.content)) {
+          prev.content = [{ type: 'text', text: prev.content }, ...item.content];
+        } else if (Array.isArray(prev.content) && typeof item.content === 'string') {
+          prev.content = [...prev.content, { type: 'text', text: item.content }];
+        } else {
+          sanitized.push(item);
+        }
+      } else {
+        sanitized.push(item);
+      }
+    }
+
+    return sanitized;
   }
 
   public async chat(params: ChatParams): Promise<string> {
@@ -549,9 +570,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens,
       top_p: params.topP,
-      stream: true,
-      stream_options: { include_usage: true }
+      stream: true
     };
+
+    if (!isNvidia) {
+      payload.stream_options = { include_usage: true };
+    }
 
     const targetModelLower = targetModel.toLowerCase();
     const supportsTools = !isNvidia || (/llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(targetModelLower) && !/guard|safety/i.test(targetModelLower));

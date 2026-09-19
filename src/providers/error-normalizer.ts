@@ -15,6 +15,8 @@ export function normalizeError(err: any, status?: number): NormalizedError {
       details = err.message;
     } else if (typeof err.error === 'string') {
       details = err.error;
+    } else if (typeof err.detail === 'string') {
+      details = err.detail;
     } else if (Array.isArray(err.errors) && err.errors.length > 0) {
       details = typeof err.errors[0] === 'string' ? err.errors[0] : JSON.stringify(err.errors[0]);
     }
@@ -28,9 +30,11 @@ export function normalizeError(err: any, status?: number): NormalizedError {
   } else if (s === 429 || /rate limit|quota.*exceeded|exceeded.*quota|too many requests|tokens per minute|requests per day/i.test(details)) {
     code = 'RATE_LIMIT';
     message = 'Rate Limit Reached. Your account quota or requests-per-minute limit was exceeded.';
-  } else if (s === 404 || /model not found|unknown model|does not exist/i.test(details)) {
+  } else if (s === 404 || s === 410 || /model not found|unknown model|does not exist|end of life|no longer available/i.test(details)) {
     code = 'NOT_FOUND';
-    message = 'Model Not Found. The requested model ID does not exist or your key lacks access. Try selecting a different model from the model selector.';
+    message = details && /end of life|no longer available/i.test(details)
+      ? `Model Deprecated. ${details}`
+      : 'Model Not Found. The requested model ID does not exist or your key lacks access. Try selecting a different model from the model selector.';
   } else if ((s && s >= 500) || /500|internal server error|bad gateway|service unavailable|gateway timeout/i.test(details)) {
     code = 'SERVER_ERROR';
     message = 'Provider Temporarily Unavailable. The AI provider server returned an internal error.';
