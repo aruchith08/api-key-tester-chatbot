@@ -665,13 +665,13 @@ export function classifyNvidiaModel(apiModelId: string, metadata?: any): Partial
     } else if (/tts|whisper|speaker|voice|audio|sound/i.test(idLower)) {
       category = 'audio';
       supportsChat = false;
-    } else if (/cuopt|calibration|ising/i.test(idLower)) {
+    } else if (/cuopt|calibration|\bising\b|ising-/i.test(idLower)) {
       category = 'optimization';
       supportsChat = false;
     } else if (/drive|petr|bevformer/i.test(idLower)) {
       category = 'autonomous-driving';
       supportsChat = false;
-    } else if (/vision|vl|image|diffus|paligemma|fuyu|kosmos/i.test(idLower)) {
+    } else if (/vision|vl|image|diffus|paligemma|fuyu|kosmos|neva|vila|deplot/i.test(idLower)) {
       category = 'vision';
       supportsVision = true;
       supportsChat = true;
@@ -684,6 +684,11 @@ export function classifyNvidiaModel(apiModelId: string, metadata?: any): Partial
       supportsChat = true;
     }
   }
+
+  // Tool calling support check (avoid sending tools payload to models that reject function calling)
+  const supportsTools = curated?.supportsTools ?? (
+    supportsChat && /llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(idLower) && !/guard|safety/i.test(idLower)
+  );
 
   // Clean human-readable display name
   let displayName = curated?.displayName;
@@ -708,6 +713,7 @@ export function classifyNvidiaModel(apiModelId: string, metadata?: any): Partial
     supportsChat,
     supportsVision,
     supportsReasoning,
+    supportsTools,
     freeEndpoint: true,
     availability: 'free-endpoint',
     source: 'dynamic',
@@ -724,8 +730,8 @@ export function isNvidiaChatCompatible(model: AIModel): boolean {
   if (model.category && ['embedding', 'audio', 'translation', 'safety', 'autonomous-driving', 'optimization'].includes(model.category)) {
     return false;
   }
-  // Filter out explicit non-chat patterns in ID
-  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|ising|bevformer|sparsedrive/i.test(model.id)) {
+  // Filter out explicit non-chat patterns in ID (ensuring \bising\b or ising- is used so aisingapore is preserved)
+  if (/embed|similarity|retriever|guard|safety|detector|translate|tts|whisper|speaker|cuopt|\bising\b|ising-|bevformer|sparsedrive/i.test(model.id)) {
     return false;
   }
   return true;

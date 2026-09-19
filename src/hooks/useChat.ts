@@ -41,23 +41,29 @@ export function useChat() {
     }
 
     const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
-    let targetModel = selectedModel?.id || selectedProvider.defaultModelId || 'default';
+    let targetModel = selectedModel?.apiModelId || selectedModel?.id || selectedProvider.defaultModelId || 'default';
 
     // Model existence check before request dispatch (Section 20 & 31)
     const isNvidia = selectedProvider.id === 'nvidia' || selectedProvider.id === 'nvidia-nim';
     if (isNvidia) {
       const currentModels = useAppStore.getState().models;
-      const existsInCurrent = currentModels.some(m => m.id === targetModel);
+      const existsInCurrent = currentModels.some(m => m.id === targetModel || m.apiModelId === targetModel);
       if (currentModels.length > 0 && !existsInCurrent) {
         showNotification('This NVIDIA model is no longer available. Refreshing available models...');
         try {
           invalidateNvidiaCache();
           const freshModels = await adapter.getModels(apiKey, true);
           useAppStore.getState().setModels(freshModels, null, 'live');
-          const fallback = freshModels.find(m => m.supportsChat && m.id) || freshModels[0];
-          if (fallback) {
-            targetModel = fallback.id;
-            useAppStore.getState().setSelectedModel(fallback);
+          const stillExists = freshModels.find(m => m.id === targetModel || m.apiModelId === targetModel);
+          if (stillExists) {
+            targetModel = stillExists.apiModelId || stillExists.id;
+            useAppStore.getState().setSelectedModel(stillExists);
+          } else {
+            const fallback = freshModels.find(m => m.supportsChat && m.id) || freshModels[0];
+            if (fallback) {
+              targetModel = fallback.apiModelId || fallback.id;
+              useAppStore.getState().setSelectedModel(fallback);
+            }
           }
         } catch (e) {
           // Continue with fallback

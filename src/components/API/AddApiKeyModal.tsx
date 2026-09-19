@@ -148,7 +148,10 @@ export const AddApiKeyModal: React.FC = () => {
 
     // Step 8: Provider State Integrity Assertion
     if (resolution.confidence === 'high' && resolution.provider && !manualProvider && !advanced.baseUrl) {
-      if (targetProvider.id !== resolution.provider.id) {
+      const isEquivalentNvidia = 
+        (targetProvider.id === 'nvidia' || targetProvider.id === 'nvidia-nim') &&
+        (resolution.provider.id === 'nvidia' || resolution.provider.id === 'nvidia-nim');
+      if (targetProvider.id !== resolution.provider.id && !isEquivalentNvidia) {
         const errorMsg = `Provider state mismatch: detected '${resolution.provider.name}' (${resolution.provider.id}) but attempted connection to '${targetProvider.name}' (${targetProvider.id}).`;
         console.error('[ARH Provider Integrity Failure]', errorMsg);
         setStatusMessage({ type: 'error', text: errorMsg });

@@ -322,13 +322,14 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
           supportsChat: classification.supportsChat,
           supportsVision: classification.supportsVision,
           supportsReasoning: classification.supportsReasoning,
+          supportsTools: classification.supportsTools,
           parameterSize: classification.parameterSize,
           buildUrl: classification.buildUrl,
           capabilities: {
             text: true,
             streaming: true,
             vision: Boolean(classification.supportsVision),
-            tools: Boolean(this.provider.capabilities.tools),
+            tools: Boolean(classification.supportsTools ?? this.provider.capabilities.tools),
             json: true
           },
           discoveredAt: Date.now()
@@ -384,7 +385,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     // For NVIDIA, check if specific model supports vision. Otherwise use provider capability.
     let canVision = Boolean(this.provider.capabilities.vision);
     if (isNvidia && targetModelId) {
-      const isVisionModel = /vision|vl|image|diffus|paligemma|fuyu|kosmos|glimmer/i.test(targetModelId);
+      const isVisionModel = /vision|vl|image|diffus|paligemma|fuyu|kosmos|glimmer|neva|vila|deplot/i.test(targetModelId);
       canVision = isVisionModel;
     }
 
@@ -452,7 +453,10 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       stream: false
     };
 
-    if (params.tools && params.tools.length > 0) {
+    const targetModelLower = targetModel.toLowerCase();
+    const supportsTools = !isNvidia || (/llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(targetModelLower) && !/guard|safety/i.test(targetModelLower));
+
+    if (params.tools && params.tools.length > 0 && supportsTools) {
       payload.tools = params.tools;
       payload.tool_choice = 'auto';
     }
@@ -549,7 +553,10 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       stream_options: { include_usage: true }
     };
 
-    if (params.tools && params.tools.length > 0) {
+    const targetModelLower = targetModel.toLowerCase();
+    const supportsTools = !isNvidia || (/llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(targetModelLower) && !/guard|safety/i.test(targetModelLower));
+
+    if (params.tools && params.tools.length > 0 && supportsTools) {
       payload.tools = params.tools;
       payload.tool_choice = 'auto';
     }

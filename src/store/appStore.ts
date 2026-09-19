@@ -181,15 +181,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   setChatState: (chatState) => set({ chatState, isGenerating: chatState === 'sending' || chatState === 'streaming' }),
   
   setModels: (models, defaultModel = null, source = 'live') => {
-    // Selection priority: chat-capable (non-embedding/utility) > preferred default > streaming-capable > first compatible
-    const compatible = models.filter(m => 
-      !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id)
-    );
-    const pool = compatible.length > 0 ? compatible : models;
+    const isNvidia = get().selectedProvider?.id === 'nvidia' || get().selectedProvider?.id === 'nvidia-nim';
+    // Selection priority: for NVIDIA preserve all models for multi-tab selector; for other providers filter non-chat utilities
+    const pool = isNvidia 
+      ? models 
+      : (models.filter(m => !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id)).length > 0
+          ? models.filter(m => !/embed|similarity|moderation|tts|whisper|dall-e|realtime/i.test(m.id))
+          : models);
 
     let chosen = defaultModel;
     if (!chosen && pool.length > 0) {
-      chosen = pool.find(m => m.isDefault) || pool.find(m => m.capabilities?.streaming) || pool[0];
+      chosen = pool.find(m => m.isDefault) || pool.find(m => m.supportsChat && m.capabilities?.streaming) || pool.find(m => m.supportsChat) || pool[0];
     }
     set({ models: pool, selectedModel: chosen, modelSource: source });
   },

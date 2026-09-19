@@ -138,11 +138,17 @@ export const ModelSelector: React.FC = () => {
 
     const newModel: Model = {
       id: trimmed,
+      apiModelId: trimmed,
       name: trimmed,
+      displayName: trimmed,
       isDefault: true,
+      supportsChat: true,
       capabilities: { text: true, streaming: true }
     };
     setSelectedModel(newModel);
+    if (!models.some(m => m.id === trimmed || m.apiModelId === trimmed)) {
+      setModels([newModel, ...models], newModel, 'live');
+    }
     setShowCustomInput(false);
     setModelSelectorOpen(false);
   };

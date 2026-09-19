@@ -171,6 +171,36 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
         supportsReasoning: true,
         contextWindow: 131072,
         capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
+      },
+      {
+        id: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        apiModelId: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        name: 'Llama 3.1 Nemotron 70B Instruct',
+        provider: 'NVIDIA NIM',
+        publisher: 'NVIDIA',
+        category: 'chat',
+        description: 'Catalog model — availability not verified',
+        source: 'catalog',
+        availability: 'free-endpoint',
+        freeEndpoint: true,
+        supportsChat: true,
+        contextWindow: 131072,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+      },
+      {
+        id: 'mistralai/mixtral-8x22b-v0.1',
+        apiModelId: 'mistralai/mixtral-8x22b-v0.1',
+        name: 'Mixtral 8x22B',
+        provider: 'NVIDIA NIM',
+        publisher: 'Mistral AI',
+        category: 'chat',
+        description: 'Catalog model — availability not verified',
+        source: 'catalog',
+        availability: 'free-endpoint',
+        freeEndpoint: true,
+        supportsChat: true,
+        contextWindow: 65536,
+        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
       }
     ],
     capabilities: {
