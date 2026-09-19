@@ -31,8 +31,7 @@ function devProxyPlugin(): Plugin {
           return;
         }
 
-        const customHost = req.headers['x-arh-custom-host'] as string | undefined;
-        if (!isPermittedUrl(targetUrl, customHost)) {
+        if (!isPermittedUrl(targetUrl)) {
           res.writeHead(403, {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
@@ -53,7 +52,7 @@ function devProxyPlugin(): Plugin {
         const forwardHeaders: Record<string, string> = {};
         for (const [key, value] of Object.entries(req.headers)) {
           const lower = key.toLowerCase();
-          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding', 'x-arh-custom-host'].includes(lower) && value) {
+          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower) && value) {
             forwardHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
           }
         }
@@ -126,8 +125,7 @@ function devProxyPlugin(): Plugin {
           return;
         }
 
-        const customHost = req.headers['x-arh-custom-host'] as string | undefined;
-        if (!isPermittedUrl(targetUrl, customHost)) {
+        if (!isPermittedUrl(targetUrl)) {
           res.writeHead(403, {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
@@ -148,7 +146,7 @@ function devProxyPlugin(): Plugin {
         const forwardHeaders: Record<string, string> = {};
         for (const [key, value] of Object.entries(req.headers)) {
           const lower = key.toLowerCase();
-          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding', 'x-arh-custom-host'].includes(lower) && value) {
+          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower) && value) {
             forwardHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
           }
         }

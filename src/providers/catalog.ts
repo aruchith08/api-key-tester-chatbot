@@ -168,11 +168,12 @@ export const PROVIDER_CATALOG: ProviderDefinition[] = [
         availability: 'free-endpoint',
         freeEndpoint: true,
         supportsChat: true,
+        supportsVision: true,
         supportsReasoning: true,
         supportsStreaming: true,
         supportsTools: true,
         contextWindow: 131072,
-        capabilities: { text: true, streaming: true, vision: false, tools: true, json: true }
+        capabilities: { text: true, streaming: true, vision: true, tools: true, json: true }
       },
       {
         id: 'meta/llama-3.2-90b-vision-instruct',

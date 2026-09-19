@@ -150,14 +150,14 @@ export function resolveRequestPolicy(
       apiModelId: 'moonshotai/kimi-k3',
       supportsTools: true,
       supportsReasoning: true,
-      supportsVision: false,
+      supportsVision: true, // NVIDIA documents Kimi K3 as multimodal (text + image input)
       supportsStreaming: true,
       supportsTopP: false, // Moonshot Kimi reasoning explicitly forbids/ignores top_p
-      supportsStreamOptions: false, // NVIDIA NIM does not support stream_options on Kimi K3
+      supportsStreamOptions: false, // NVIDIA NIM documentation lists stream_options as optional; omitted to prevent schema validation rejections on strict NIM endpoints
       temperature: {
         min: 0.0,
         max: 1.0,
-        default: 0.6 // Recommended temperature for Kimi reasoning models
+        default: 1.0 // NVIDIA API documentation specifies range 0..1 with recommended temperature 1.0
       },
       preserveReasoningContent: true
     };
@@ -172,7 +172,7 @@ export function resolveRequestPolicy(
       supportsVision: caps.supportsVision,
       supportsStreaming: caps.supportsStreaming,
       supportsTopP: true,
-      supportsStreamOptions: false, // NVIDIA NIM integrate API does not support stream_options
+      supportsStreamOptions: false, // NVIDIA NIM endpoints treat stream_options as optional / omit for strict endpoint compatibility
       preserveReasoningContent: caps.supportsReasoning,
       temperature: { min: 0.0, max: 2.0, default: 0.7 }
     };

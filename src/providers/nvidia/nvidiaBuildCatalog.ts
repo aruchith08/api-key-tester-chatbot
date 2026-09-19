@@ -40,14 +40,17 @@ export const NVIDIA_CURATED_BUILD_MODELS: NvidiaCuratedModel[] = [
     provider: 'nvidia',
     source: 'nvidia-build',
     availability: 'free-endpoint',
-    capabilities: ['chat', 'reasoning', 'text-generation', 'tools'],
+    capabilities: ['chat', 'reasoning', 'text-generation', 'tools', 'vision', 'multimodal'],
     category: 'reasoning',
     supportsChat: true,
+    supportsVision: true,
     supportsReasoning: true,
     supportsStreaming: true,
     supportsTools: true,
     freeEndpoint: true,
     parameterSize: '128k',
+    inputModalities: ['text', 'image'],
+    outputModalities: ['text'],
     buildUrl: 'https://build.nvidia.com/moonshotai/kimi-k3'
   },
   {
