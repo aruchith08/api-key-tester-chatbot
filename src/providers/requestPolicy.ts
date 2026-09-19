@@ -244,3 +244,90 @@ export function buildCompliantPayload(
 
   return payload;
 }
+
+/**
+ * Creates a minimal Kimi K3 request payload strictly for diagnostic verification
+ * and independent testing against the official NVIDIA NIM specification:
+ * {
+ *   "model": "moonshotai/kimi-k3",
+ *   "messages": [{ "role": "user", "content": "hi" }],
+ *   "stream": true,
+ *   "temperature": 1
+ * }
+ */
+export function buildMinimalKimiDiagnosticPayload(): {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  stream: boolean;
+  temperature: number;
+} {
+  return {
+    model: 'moonshotai/kimi-k3',
+    messages: [
+      {
+        role: 'user',
+        content: 'hi'
+      }
+    ],
+    stream: true,
+    temperature: 1
+  };
+}
+
+export interface SanitizedDevRequestLog {
+  method: string;
+  url: {
+    hostname: string;
+    path: string;
+  };
+  model?: string;
+  messages?: any[];
+  temperature?: number;
+  reasoning_effort?: any;
+  stream?: boolean;
+  tools?: any[];
+  stream_options?: any;
+  otherParams?: Record<string, any>;
+}
+
+/**
+ * Creates a sanitized representation of an outgoing chat request suitable for Dev Mode logging.
+ * Never logs API keys, Authorization headers, cookies, or secrets.
+ */
+export function createSanitizedDevRequestLog(method: string, url: string, payload: any): SanitizedDevRequestLog {
+  let hostname = '';
+  let pathname = url;
+  try {
+    const parsed = new URL(url.startsWith('/') ? `http://localhost${url}` : url);
+    hostname = parsed.hostname;
+    pathname = parsed.pathname;
+  } catch {
+    // fallback
+  }
+
+  const otherParams: Record<string, any> = {};
+  const standardKeys = new Set(['model', 'messages', 'temperature', 'reasoning_effort', 'stream', 'tools', 'stream_options']);
+  if (payload && typeof payload === 'object') {
+    for (const k of Object.keys(payload)) {
+      if (!standardKeys.has(k)) {
+        otherParams[k] = payload[k];
+      }
+    }
+  }
+
+  return {
+    method,
+    url: {
+      hostname: hostname || 'local',
+      path: pathname
+    },
+    model: payload?.model,
+    messages: payload?.messages,
+    temperature: payload?.temperature,
+    reasoning_effort: payload?.reasoning_effort,
+    stream: payload?.stream,
+    tools: payload?.tools,
+    stream_options: payload?.stream_options,
+    otherParams
+  };
+}

@@ -70,11 +70,14 @@ export class DirectTransport implements AITransport {
       }
 
       if (!res.ok) {
-        const normalized = normalizeError(data, res.status);
+        const reqId = headersMap['nvcf-reqid'] || headersMap['x-request-id'] || headersMap['request-id'];
+        const normalized = normalizeError(data, res.status, { requestId: reqId });
         const err: any = new Error(normalized.message);
         err.status = res.status;
         err.normalized = normalized;
         err.data = data;
+        err.headers = headersMap;
+        err.requestId = reqId;
         throw err;
       }
 
@@ -144,11 +147,18 @@ export class DirectTransport implements AITransport {
         } catch {
           errData = rawErrText;
         }
-        const normalized = normalizeError(errData, res.status);
+        const headersMap: Record<string, string> = {};
+        res.headers.forEach((val, key) => {
+          headersMap[key.toLowerCase()] = val;
+        });
+        const reqId = headersMap['nvcf-reqid'] || headersMap['x-request-id'] || headersMap['request-id'];
+        const normalized = normalizeError(errData, res.status, { requestId: reqId });
         const err: any = new Error(normalized.message);
         err.status = res.status;
         err.normalized = normalized;
         err.data = errData;
+        err.headers = headersMap;
+        err.requestId = reqId;
         throw err;
       }
 

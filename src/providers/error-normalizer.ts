@@ -66,7 +66,7 @@ export function normalizeError(
     }
 
     if (!requestId) {
-      requestId = err.requestId || err.id || err.request_id || err.headers?.['x-request-id'];
+      requestId = err.requestId || err.id || err.request_id || err.headers?.['nvcf-reqid'] || err.headers?.['x-request-id'] || err.headers?.['request-id'];
     }
   }
 

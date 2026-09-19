@@ -1,9 +1,16 @@
 import { SSEParser } from '../../src/utils/sseParser';
-import { resolveRequestPolicy, resolveModelCapabilities, buildCompliantPayload } from '../../src/providers/requestPolicy';
+import {
+  resolveRequestPolicy,
+  resolveModelCapabilities,
+  buildCompliantPayload,
+  buildMinimalKimiDiagnosticPayload,
+  createSanitizedDevRequestLog
+} from '../../src/providers/requestPolicy';
 import { getCachedModels, setCachedModels, createCredentialFingerprint, invalidateModelCache } from '../../src/providers/modelCache';
 import { isPermittedUrl, isPrivateOrMetadataHost } from '../../api/proxy';
 import { ProviderRegistry } from '../../src/providers/registry';
 import { OpenAICompatibleAdapter } from '../../src/providers/adapters/OpenAICompatibleAdapter';
+import { normalizeError } from '../../src/providers/error-normalizer';
 import { useAppStore } from '../../src/store/appStore';
 
 export async function runKimiAndHardeningTests(server: any, assert: (cond: boolean, msg: string) => void) {
@@ -217,6 +224,9 @@ export async function runKimiAndHardeningTests(server: any, assert: (cond: boole
   // SSRF checks cannot be bypassed even if in server trusted set
   assert(isPermittedUrl('https://169.254.169.254/latest', new Set(['169.254.169.254'])) === false, 'Rejects metadata IP even if configured in server trusted list');
   assert(isPermittedUrl('https://localhost:3000', new Set(['localhost'])) === false, 'Rejects localhost even if configured in server trusted list');
+  assert(isPrivateOrMetadataHost('localhost') === true, 'isPrivateOrMetadataHost flags localhost');
+  assert(isPrivateOrMetadataHost('169.254.169.254') === true, 'isPrivateOrMetadataHost flags link-local metadata');
+  assert(isPrivateOrMetadataHost('integrate.api.nvidia.com') === false, 'isPrivateOrMetadataHost permits NVIDIA public host');
 
   // 7. Chat State & Regenerate Integrity (Zero user message duplication)
   useAppStore.setState({
@@ -240,4 +250,67 @@ export async function runKimiAndHardeningTests(server: any, assert: (cond: boole
   assert(stateAfter.filter(m => m.role === 'user').length === 1, 'Regenerate does NOT duplicate the user prompt');
   assert(stateAfter[0].id === 'u1', 'Original user message preserved');
   assert(stateAfter[1].id === assistantId, 'New assistant placeholder created');
+
+  // 8. Minimal Kimi Diagnostic Payload, Normal Request Comparison & 504 Preservation
+  const diagPayload = buildMinimalKimiDiagnosticPayload();
+  assert(diagPayload.model === 'moonshotai/kimi-k3', 'Diagnostic payload has exact canonical model moonshotai/kimi-k3');
+  assert(diagPayload.stream === true, 'Diagnostic payload enables stream');
+  assert(diagPayload.temperature === 1, 'Diagnostic payload sets temperature to 1');
+  assert(diagPayload.messages.length === 1, 'Diagnostic payload contains exactly 1 message');
+  assert(diagPayload.messages[0].role === 'user', 'Diagnostic message role is user');
+  assert(diagPayload.messages[0].content === 'hi', 'Diagnostic message content is hi');
+  assert((diagPayload as any).tools === undefined, 'Diagnostic payload strictly omits tools');
+  assert((diagPayload as any).stream_options === undefined, 'Diagnostic payload strictly omits stream_options');
+  assert((diagPayload as any).top_p === undefined, 'Diagnostic payload strictly omits top_p');
+
+  // Field-by-field comparison: ARH normal minimal request matches the diagnostic payload
+  const normalMinMessages = [{ role: 'user', content: 'hi' }];
+  const normalMinPayload = buildCompliantPayload(
+    policyKimiSlug,
+    { apiKey: 'test', model: 'moonshotai/kimi-k3', messages: normalMinMessages as any },
+    normalMinMessages
+  );
+  assert(normalMinPayload.model === diagPayload.model, 'Normal minimal request model matches diagnostic payload');
+  assert(normalMinPayload.temperature === diagPayload.temperature, 'Normal minimal request temperature matches diagnostic payload');
+  assert(normalMinPayload.stream === diagPayload.stream, 'Normal minimal request stream matches diagnostic payload');
+  assert(JSON.stringify(normalMinPayload.messages) === JSON.stringify(diagPayload.messages), 'Normal minimal messages match diagnostic messages');
+  assert(normalMinPayload.top_p === undefined, 'Normal minimal payload omits top_p');
+  assert(normalMinPayload.stream_options === undefined, 'Normal minimal payload omits stream_options');
+  assert(normalMinPayload.tools === undefined, 'Normal minimal payload omits tools');
+
+  // Provider 504 FUNCTION_INVOCATION_TIMEOUT preservation
+  const rawNvidia504 = {
+    detail: 'FUNCTION_INVOCATION_TIMEOUT'
+  };
+  const norm504 = normalizeError(rawNvidia504, 504, {
+    provider: 'NVIDIA NIM',
+    model: 'moonshotai/kimi-k3',
+    requestId: 'nvcf-req-4b92-9901'
+  });
+  assert(norm504.statusCode === 504, 'Normalized error preserves HTTP 504 status code');
+  assert(norm504.code === 'SERVER_ERROR', '504 maps to SERVER_ERROR code');
+  assert(norm504.provider === 'NVIDIA NIM', '504 preserves NVIDIA NIM provider name');
+  assert(norm504.model === 'moonshotai/kimi-k3', '504 preserves target model');
+  assert(norm504.requestId === 'nvcf-req-4b92-9901', '504 preserves upstream request ID');
+  assert(norm504.providerMessage === 'FUNCTION_INVOCATION_TIMEOUT', '504 preserves raw provider error message FUNCTION_INVOCATION_TIMEOUT');
+  assert(norm504.isRetryable === true, '504 marked as retryable for user action without automated loops');
+
+  // Sanitized Dev Mode request representation (Zero secret leakage)
+  const devReqLog = createSanitizedDevRequestLog(
+    'POST',
+    'https://integrate.api.nvidia.com/v1/chat/completions',
+    normalMinPayload
+  );
+  assert(devReqLog.method === 'POST', 'Dev log preserves POST method');
+  assert(devReqLog.url.hostname === 'integrate.api.nvidia.com', 'Dev log extracts hostname');
+  assert(devReqLog.url.path === '/v1/chat/completions', 'Dev log extracts path');
+  assert(devReqLog.model === 'moonshotai/kimi-k3', 'Dev log preserves model');
+  assert(devReqLog.temperature === 1, 'Dev log preserves temperature');
+  assert(devReqLog.stream === true, 'Dev log preserves stream flag');
+
+  const serializedDevLog = JSON.stringify(devReqLog);
+  assert(!serializedDevLog.includes('Authorization'), 'Dev log strictly excludes Authorization header');
+  assert(!serializedDevLog.includes('Bearer'), 'Dev log strictly excludes Bearer token');
+  assert(!serializedDevLog.includes('apiKey'), 'Dev log strictly excludes apiKey');
+  assert(!serializedDevLog.includes('cookie'), 'Dev log strictly excludes cookies');
 }

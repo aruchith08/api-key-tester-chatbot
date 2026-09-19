@@ -12,7 +12,7 @@ import {
 } from '../nvidia/nvidiaBuildCatalog';
 import { classifyUniversalModel } from '../modelClassifier';
 import { getCachedModels, setCachedModels } from '../modelCache';
-import { resolveRequestPolicy, buildCompliantPayload } from '../requestPolicy';
+import { resolveRequestPolicy, buildCompliantPayload, createSanitizedDevRequestLog } from '../requestPolicy';
 import { SSEParser, type SSEParsedEvent } from '../../utils/sseParser';
 
 export class OpenAICompatibleAdapter implements AIProviderAdapter {
@@ -453,6 +453,10 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     const payload = buildCompliantPayload(policy, { ...params, stream: false }, formattedMessages);
 
     const startTime = Date.now();
+    if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[DevMode][Request]`, createSanitizedDevRequestLog('POST', chatUrl, payload));
+    }
+
     if (params.onRequestInspector) {
       params.onRequestInspector({
         method: 'POST',
@@ -473,7 +477,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         signal: params.signal
       });
     } catch (err: any) {
-      const norm = normalizeError(err, err.status, this.provider.name, targetModel);
+      const reqId = err.requestId || err.headers?.['nvcf-reqid'] || err.headers?.['x-request-id'] || err.headers?.['request-id'];
+      const norm = normalizeError(err, err.status, {
+        provider: this.provider.name,
+        model: targetModel,
+        requestId: reqId
+      });
       throw {
         ...err,
         normalized: norm
@@ -518,6 +527,10 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     let usage: any = null;
     let finishReason: string | undefined;
     const toolCallsMap = new Map<number, { id: string; name: string; arguments: string }>();
+
+    if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
+      console.log(`[DevMode][Request]`, createSanitizedDevRequestLog('POST', chatUrl, payload));
+    }
 
     if (params.onRequestInspector) {
       params.onRequestInspector({
@@ -632,7 +645,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         }
       }
     } catch (err: any) {
-      const norm = normalizeError(err, err.status, this.provider.name, targetModel);
+      const reqId = err.requestId || err.headers?.['nvcf-reqid'] || err.headers?.['x-request-id'] || err.headers?.['request-id'];
+      const norm = normalizeError(err, err.status, {
+        provider: this.provider.name,
+        model: targetModel,
+        requestId: reqId
+      });
       yield { type: 'error', error: norm };
       return;
     }
