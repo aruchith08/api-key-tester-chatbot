@@ -34,6 +34,8 @@ export interface ToolCall {
   };
 }
 
+import type { NormalizedError } from '../providers/types';
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -46,6 +48,7 @@ export interface ChatMessage {
   timestamp: number;
   isStreaming?: boolean;
   error?: string;
+  errorDiagnostic?: NormalizedError;
   metrics?: {
     ttftMs?: number;
     totalDurationMs?: number;

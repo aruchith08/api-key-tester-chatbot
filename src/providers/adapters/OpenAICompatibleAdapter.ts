@@ -12,6 +12,8 @@ import {
 } from '../nvidia/nvidiaBuildCatalog';
 import { classifyUniversalModel } from '../modelClassifier';
 import { getCachedModels, setCachedModels } from '../modelCache';
+import { resolveRequestPolicy, buildCompliantPayload } from '../requestPolicy';
+import { SSEParser, type SSEParsedEvent } from '../../utils/sseParser';
 
 export class OpenAICompatibleAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -89,11 +91,11 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
             });
 
             // Cache models on successful validation
-            setCachedNvidiaModels(resolvedModels);
+            setCachedNvidiaModels(resolvedModels, apiKey);
           }
 
           // Store in universal multi-provider cache
-          setCachedModels(this.provider.id, resolvedModels);
+          setCachedModels(this.provider.id, resolvedModels, apiKey);
 
           return {
             success: true,
@@ -115,28 +117,7 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
             };
           }
 
-          let norm = err.normalized || normalizeError(err, err.status);
-          if (isNvidia) {
-            if (err.status === 401 || err.status === 403) {
-              norm = {
-                code: 'AUTH_ERROR',
-                message: 'Invalid NVIDIA API key or unauthorized access.',
-                statusCode: err.status
-              };
-            } else if (err.status === 429) {
-              norm = {
-                code: 'RATE_LIMIT',
-                message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
-                statusCode: 429
-              };
-            } else if (err.status === 404) {
-              norm = {
-                code: 'NOT_FOUND',
-                message: "Model not currently available through your NVIDIA API endpoint.",
-                statusCode: 404
-              };
-            }
-          }
+          const norm = err.normalized || normalizeError(err, err.status, this.provider.name);
 
           return {
             success: false,
@@ -232,12 +213,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
     if (!bypassCache) {
       if (isNvidia) {
-        const cachedNvidia = getCachedNvidiaModels();
+        const cachedNvidia = getCachedNvidiaModels(apiKey);
         if (cachedNvidia && cachedNvidia.length > 0) {
           return cachedNvidia;
         }
       }
-      const cached = getCachedModels(this.provider.id);
+      const cached = getCachedModels(this.provider.id, apiKey);
       if (cached && cached.length > 0) {
         return cached;
       }
@@ -270,12 +251,12 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       const models = this.normalizeModels(res.data);
       const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
-      setCachedModels(this.provider.id, resolved);
+      setCachedModels(this.provider.id, resolved, apiKey);
       if (isNvidia) {
         if (typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
           console.log(`[NVIDIA] Models discovered: ${resolved.length}`);
         }
-        setCachedNvidiaModels(resolved);
+        setCachedNvidiaModels(resolved, apiKey);
       }
 
       return resolved;
@@ -381,13 +362,8 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       formatted.push({ role: 'system', content: systemPrompt });
     }
 
-    const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
-    // For NVIDIA, check if specific model supports vision. Otherwise use provider capability.
-    let canVision = Boolean(this.provider.capabilities.vision);
-    if (isNvidia && targetModelId) {
-      const isVisionModel = /vision|vl|image|diffus|paligemma|fuyu|kosmos|glimmer|neva|vila|deplot/i.test(targetModelId);
-      canVision = isVisionModel;
-    }
+    const policy = resolveRequestPolicy(this.provider, null, targetModelId);
+    const canVision = policy.supportsVision;
 
     for (const msg of messages) {
       if (msg.role === 'tool') {
@@ -400,15 +376,22 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
       }
 
       if (msg.role === 'assistant') {
+        const assistantMsg: any = {
+          role: 'assistant',
+          content: msg.content || null
+        };
+        // Preserve reasoning_content across multi-turn conversations (Kimi K3, DeepSeek-R1, etc.)
+        if (msg.thinking && policy.preserveReasoningContent) {
+          assistantMsg.reasoning_content = msg.thinking;
+        }
         if (msg.tool_calls && msg.tool_calls.length > 0) {
-          formatted.push({
-            role: 'assistant',
-            content: msg.content || null,
-            tool_calls: msg.tool_calls
-          });
+          assistantMsg.tool_calls = msg.tool_calls;
+          formatted.push(assistantMsg);
           continue;
         }
-        if (!msg.content || (msg.error && !msg.content.trim())) continue;
+        if (!msg.content && !msg.thinking && (msg.error && !msg.content?.trim())) continue;
+        formatted.push(assistantMsg);
+        continue;
       }
 
       if (msg.role === 'user' && msg.attachments && msg.attachments.length > 0 && canVision) {
@@ -456,7 +439,8 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async chat(params: ChatParams): Promise<string> {
     const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
-    const targetModel = params.model || this.provider.defaultModelId || 'default';
+    const policy = resolveRequestPolicy(this.provider, null, params.model);
+    const targetModel = policy.apiModelId;
 
     if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
       console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
@@ -465,22 +449,8 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     }
 
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
-    const payload: any = {
-      model: targetModel,
-      messages: this.formatMessages(params.messages, params.systemPrompt, targetModel),
-      temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens,
-      top_p: params.topP,
-      stream: false
-    };
-
-    const targetModelLower = targetModel.toLowerCase();
-    const supportsTools = !isNvidia || (/llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(targetModelLower) && !/guard|safety/i.test(targetModelLower));
-
-    if (params.tools && params.tools.length > 0 && supportsTools) {
-      payload.tools = params.tools;
-      payload.tool_choice = 'auto';
-    }
+    const formattedMessages = this.formatMessages(params.messages, params.systemPrompt, targetModel);
+    const payload = buildCompliantPayload(policy, { ...params, stream: false }, formattedMessages);
 
     const startTime = Date.now();
     if (params.onRequestInspector) {
@@ -503,37 +473,11 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         signal: params.signal
       });
     } catch (err: any) {
-      if (isNvidia) {
-        if (err.status === 401 || err.status === 403) {
-          throw {
-            ...err,
-            normalized: {
-              code: 'AUTH_ERROR',
-              message: 'Invalid NVIDIA API key or unauthorized access.',
-              statusCode: err.status
-            }
-          };
-        } else if (err.status === 429) {
-          throw {
-            ...err,
-            normalized: {
-              code: 'RATE_LIMIT',
-              message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
-              statusCode: 429
-            }
-          };
-        } else if (err.status === 404) {
-          throw {
-            ...err,
-            normalized: {
-              code: 'NOT_FOUND',
-              message: `Model '${targetModel}' is not currently available through your NVIDIA API endpoint.`,
-              statusCode: 404
-            }
-          };
-        }
-      }
-      throw err;
+      const norm = normalizeError(err, err.status, this.provider.name, targetModel);
+      throw {
+        ...err,
+        normalized: norm
+      };
     }
 
     if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
@@ -555,7 +499,8 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
 
   public async *streamChat(params: ChatParams): AsyncIterable<StreamEvent> {
     const isNvidia = this.provider.id === 'nvidia' || this.provider.id === 'nvidia-nim';
-    const targetModel = params.model || this.provider.defaultModelId || 'default';
+    const policy = resolveRequestPolicy(this.provider, null, params.model);
+    const targetModel = policy.apiModelId;
 
     if (isNvidia && typeof window !== 'undefined' && (import.meta as any).env?.DEV) {
       console.log(`[NVIDIA] API base URL: ${this.provider.baseUrl}`);
@@ -564,26 +509,8 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
     }
 
     const chatUrl = this.buildUrl(this.provider.chatEndpoint || '/chat/completions');
-    const payload: any = {
-      model: targetModel,
-      messages: this.formatMessages(params.messages, params.systemPrompt, targetModel),
-      temperature: params.temperature ?? 0.7,
-      max_tokens: params.maxTokens,
-      top_p: params.topP,
-      stream: true
-    };
-
-    if (!isNvidia) {
-      payload.stream_options = { include_usage: true };
-    }
-
-    const targetModelLower = targetModel.toLowerCase();
-    const supportsTools = !isNvidia || (/llama-3|nemotron|mistral|mixtral|jamba|qwen|gpt-oss/i.test(targetModelLower) && !/guard|safety/i.test(targetModelLower));
-
-    if (params.tools && params.tools.length > 0 && supportsTools) {
-      payload.tools = params.tools;
-      payload.tool_choice = 'auto';
-    }
+    const formattedMessages = this.formatMessages(params.messages, params.systemPrompt, targetModel);
+    const payload = buildCompliantPayload(policy, { ...params, stream: true }, formattedMessages);
 
     const requestStartTime = Date.now();
     let firstTokenTime: number | null = null;
@@ -611,115 +538,101 @@ export class OpenAICompatibleAdapter implements AIProviderAdapter {
         signal: params.signal
       });
 
-      let buffer = '';
+      const sseParser = new SSEParser();
+
+      const processEvent = (event: SSEParsedEvent): StreamEvent[] => {
+        const eventsToYield: StreamEvent[] = [];
+        if (event.isDone) return eventsToYield;
+
+        const data = event.parsedData;
+        if (!data) return eventsToYield;
+
+        if (data.usage) {
+          usage = data.usage;
+          eventsToYield.push({
+            type: 'usage',
+            inputTokens: data.usage.prompt_tokens,
+            outputTokens: data.usage.completion_tokens,
+            totalTokens: data.usage.total_tokens
+          });
+        }
+
+        if (data.choices?.[0]?.finish_reason) {
+          finishReason = data.choices[0].finish_reason;
+        }
+
+        // Handle reasoning_content (DeepSeek-R1, NVIDIA Nemotron, Kimi K3, etc.)
+        const deltaReasoning = data.choices?.[0]?.delta?.reasoning_content || data.choices?.[0]?.delta?.reasoning;
+        if (deltaReasoning) {
+          eventsToYield.push({
+            type: 'thinking',
+            content: deltaReasoning
+          });
+        }
+
+        const deltaContent = data.choices?.[0]?.delta?.content;
+        if (deltaContent) {
+          if (firstTokenTime === null) {
+            firstTokenTime = Date.now();
+          }
+          fullText += deltaContent;
+          eventsToYield.push({
+            type: 'token',
+            content: deltaContent
+          });
+        }
+
+        // Handle tool calls in streaming
+        const deltaToolCalls = data.choices?.[0]?.delta?.tool_calls;
+        if (deltaToolCalls && Array.isArray(deltaToolCalls)) {
+          for (const tc of deltaToolCalls) {
+            const idx = tc.index ?? 0;
+            if (!toolCallsMap.has(idx)) {
+              toolCallsMap.set(idx, {
+                id: tc.id || `call_${Date.now()}_${idx}`,
+                name: tc.function?.name || '',
+                arguments: tc.function?.arguments || ''
+              });
+            } else {
+              const existing = toolCallsMap.get(idx)!;
+              if (tc.id) existing.id = tc.id;
+              if (tc.function?.name) existing.name += tc.function.name;
+              if (tc.function?.arguments) existing.arguments += tc.function.arguments;
+            }
+
+            eventsToYield.push({
+              type: 'tool_call_delta',
+              index: idx,
+              id: tc.id,
+              name: tc.function?.name,
+              argumentsDelta: tc.function?.arguments
+            });
+          }
+        }
+
+        return eventsToYield;
+      };
 
       for await (const chunk of streamChunks) {
-        buffer += chunk;
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed.startsWith(':')) continue;
-          if (trimmed === 'data: [DONE]') continue;
-
-          if (trimmed.startsWith('data: ')) {
-            const jsonStr = trimmed.substring(6);
-            try {
-              const data = JSON.parse(jsonStr);
-
-              if (data.usage) {
-                usage = data.usage;
-                yield {
-                  type: 'usage',
-                  inputTokens: data.usage.prompt_tokens,
-                  outputTokens: data.usage.completion_tokens,
-                  totalTokens: data.usage.total_tokens
-                };
-              }
-
-              if (data.choices?.[0]?.finish_reason) {
-                finishReason = data.choices[0].finish_reason;
-              }
-
-              // Handle reasoning_content (DeepSeek-R1, NVIDIA Nemotron, Cerebras, etc.) and standard content delta separately
-              const deltaContent = data.choices?.[0]?.delta?.content;
-              const deltaReasoning = data.choices?.[0]?.delta?.reasoning_content || data.choices?.[0]?.delta?.reasoning;
-
-              if (deltaReasoning) {
-                yield {
-                  type: 'thinking',
-                  content: deltaReasoning
-                };
-              }
-
-              if (deltaContent) {
-                if (firstTokenTime === null) {
-                  firstTokenTime = Date.now();
-                }
-                fullText += deltaContent;
-                yield {
-                  type: 'token',
-                  content: deltaContent
-                };
-              }
-
-              // Handle tool calls in streaming
-              const deltaToolCalls = data.choices?.[0]?.delta?.tool_calls;
-              if (deltaToolCalls && Array.isArray(deltaToolCalls)) {
-                for (const tc of deltaToolCalls) {
-                  const idx = tc.index ?? 0;
-                  if (!toolCallsMap.has(idx)) {
-                    toolCallsMap.set(idx, {
-                      id: tc.id || `call_${Date.now()}_${idx}`,
-                      name: tc.function?.name || '',
-                      arguments: tc.function?.arguments || ''
-                    });
-                  } else {
-                    const existing = toolCallsMap.get(idx)!;
-                    if (tc.id) existing.id = tc.id;
-                    if (tc.function?.name) existing.name += tc.function.name;
-                    if (tc.function?.arguments) existing.arguments += tc.function.arguments;
-                  }
-
-                  yield {
-                    type: 'tool_call_delta',
-                    index: idx,
-                    id: tc.id,
-                    name: tc.function?.name,
-                    argumentsDelta: tc.function?.arguments
-                  };
-                }
-              }
-            } catch (err) {
-              // Ignore partial or unparseable SSE line
-            }
+        const events = sseParser.feed(chunk);
+        for (const ev of events) {
+          const yielded = processEvent(ev);
+          for (const out of yielded) {
+            yield out;
           }
         }
       }
-    } catch (err: any) {
-      let norm = err.normalized || normalizeError(err, err.status);
-      if (isNvidia) {
-        if (err.status === 401 || err.status === 403) {
-          norm = {
-            code: 'AUTH_ERROR',
-            message: 'Invalid NVIDIA API key or unauthorized access.',
-            statusCode: err.status
-          };
-        } else if (err.status === 429) {
-          norm = {
-            code: 'RATE_LIMIT',
-            message: 'NVIDIA Free Endpoint rate limit reached. Please wait and try again.',
-            statusCode: 429
-          };
-        } else if (err.status === 404) {
-          norm = {
-            code: 'NOT_FOUND',
-            message: `Model '${payload.model}' is not currently available through your NVIDIA API endpoint.`,
-            statusCode: 404
-          };
+
+      // Flush any trailing event held without a newline
+      const trailingEvents = sseParser.flush();
+      for (const ev of trailingEvents) {
+        const yielded = processEvent(ev);
+        for (const out of yielded) {
+          yield out;
         }
       }
+    } catch (err: any) {
+      const norm = normalizeError(err, err.status, this.provider.name, targetModel);
       yield { type: 'error', error: norm };
       return;
     }

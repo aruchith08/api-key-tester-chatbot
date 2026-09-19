@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import path from 'path';
+import { isPermittedUrl } from './api/proxy.ts';
 
 function devProxyPlugin(): Plugin {
   return {
@@ -30,6 +31,16 @@ function devProxyPlugin(): Plugin {
           return;
         }
 
+        const customHost = req.headers['x-arh-custom-host'] as string | undefined;
+        if (!isPermittedUrl(targetUrl, customHost)) {
+          res.writeHead(403, {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(JSON.stringify({ error: 'Target URL host is not permitted by proxy allowlist policy' }));
+          return;
+        }
+
         let bodyBuffer: Buffer | undefined;
         if (req.method !== 'GET' && req.method !== 'HEAD') {
           const chunks: Buffer[] = [];
@@ -42,7 +53,7 @@ function devProxyPlugin(): Plugin {
         const forwardHeaders: Record<string, string> = {};
         for (const [key, value] of Object.entries(req.headers)) {
           const lower = key.toLowerCase();
-          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower) && value) {
+          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding', 'x-arh-custom-host'].includes(lower) && value) {
             forwardHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
           }
         }
@@ -51,7 +62,8 @@ function devProxyPlugin(): Plugin {
           const upstreamRes = await fetch(targetUrl, {
             method: req.method,
             headers: forwardHeaders,
-            body: bodyBuffer
+            body: bodyBuffer,
+            redirect: 'manual'
           });
 
           const resHeaders: Record<string, string> = {
@@ -114,6 +126,16 @@ function devProxyPlugin(): Plugin {
           return;
         }
 
+        const customHost = req.headers['x-arh-custom-host'] as string | undefined;
+        if (!isPermittedUrl(targetUrl, customHost)) {
+          res.writeHead(403, {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          });
+          res.end(JSON.stringify({ error: 'Target URL host is not permitted by proxy allowlist policy' }));
+          return;
+        }
+
         let bodyBuffer: Buffer | undefined;
         if (req.method !== 'GET' && req.method !== 'HEAD') {
           const chunks: Buffer[] = [];
@@ -126,7 +148,7 @@ function devProxyPlugin(): Plugin {
         const forwardHeaders: Record<string, string> = {};
         for (const [key, value] of Object.entries(req.headers)) {
           const lower = key.toLowerCase();
-          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower) && value) {
+          if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding', 'x-arh-custom-host'].includes(lower) && value) {
             forwardHeaders[key] = Array.isArray(value) ? value.join(', ') : value;
           }
         }
@@ -135,7 +157,8 @@ function devProxyPlugin(): Plugin {
           const upstreamRes = await fetch(targetUrl, {
             method: req.method,
             headers: forwardHeaders,
-            body: bodyBuffer
+            body: bodyBuffer,
+            redirect: 'manual'
           });
 
           const resHeaders: Record<string, string> = {

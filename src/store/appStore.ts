@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Model, ProviderDefinition, ConnectionResult, ResolvedConnectionStrategy } from '../types/provider';
+import type { NormalizedError } from '../providers/types';
 import type { ChatMessage, MessageAttachment, CodeExecutionState, ToolCall, GeneratedFile } from '../types/chat';
 import type { InspectorRequestData, InspectorResponseData, PerformanceMetricsData } from '../types/capabilities';
 import type { ProviderSessionVerification, VerificationStageResult } from '../types/verification';
@@ -100,7 +101,7 @@ interface AppState {
   updateAssistantMessage: (id: string, content: string, isStreaming?: boolean, metrics?: PerformanceMetricsData, thinking?: string, toolCalls?: ToolCall[]) => void;
   addToolMessage: (toolCallId: string, content: string) => string;
   setMessageExecution: (id: string, execution: CodeExecutionState) => void;
-  setAssistantError: (id: string, error: string) => void;
+  setAssistantError: (id: string, error: string, errorDiagnostic?: NormalizedError) => void;
   setGenerating: (generating: boolean, controller?: AbortController | null) => void;
   stopGeneration: () => void;
   clearChat: () => void;
@@ -303,12 +304,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
   },
   
-  setAssistantError: (id, error) => {
+  setAssistantError: (id, error, errorDiagnostic) => {
     set((state) => ({
       isGenerating: false,
       messages: state.messages.map((m) => 
         m.id === id 
-          ? { ...m, error, isStreaming: false } 
+          ? { ...m, error, errorDiagnostic, isStreaming: false } 
           : m
       )
     }));

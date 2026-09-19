@@ -141,6 +141,13 @@ export interface NormalizedError {
   message: string;
   details?: string;
   statusCode?: number;
+  provider?: string;
+  providerCode?: string;
+  providerMessage?: string;
+  model?: string;
+  requestId?: string;
+  isRetryable?: boolean;
+  rawBody?: any;
 }
 
 export interface ProviderResolution {

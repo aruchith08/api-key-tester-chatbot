@@ -1,5 +1,7 @@
 import type { AIModel } from '../types';
 
+export const NVIDIA_DEFAULT_MODEL_ID = 'meta/llama-3.2-11b-vision-instruct';
+
 export interface NvidiaCuratedModel {
   slug: string;
   apiModelId?: string;
@@ -38,11 +40,12 @@ export const NVIDIA_CURATED_BUILD_MODELS: NvidiaCuratedModel[] = [
     provider: 'nvidia',
     source: 'nvidia-build',
     availability: 'free-endpoint',
-    capabilities: ['chat', 'reasoning', 'text-generation'],
+    capabilities: ['chat', 'reasoning', 'text-generation', 'tools'],
     category: 'reasoning',
     supportsChat: true,
     supportsReasoning: true,
     supportsStreaming: true,
+    supportsTools: true,
     freeEndpoint: true,
     parameterSize: '128k',
     buildUrl: 'https://build.nvidia.com/moonshotai/kimi-k3'
@@ -741,34 +744,20 @@ export function isNvidiaChatCompatible(model: AIModel): boolean {
 }
 
 /**
- * In-Memory Model Cache with 10-Minute TTL
+ * In-Memory Model Cache with credential isolation and 10-Minute TTL
  */
-interface ModelCacheEntry {
-  models: AIModel[];
-  timestamp: number;
+import { getCachedModels, setCachedModels, invalidateModelCache } from '../modelCache';
+
+export function getCachedNvidiaModels(apiKey?: string): AIModel[] | null {
+  return getCachedModels('nvidia', apiKey);
 }
 
-let nvidiaModelCache: ModelCacheEntry | null = null;
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-export function getCachedNvidiaModels(): AIModel[] | null {
-  if (!nvidiaModelCache) return null;
-  if (Date.now() - nvidiaModelCache.timestamp > CACHE_TTL_MS) {
-    nvidiaModelCache = null;
-    return null;
-  }
-  return nvidiaModelCache.models;
+export function setCachedNvidiaModels(models: AIModel[], apiKey?: string): void {
+  setCachedModels('nvidia', models, apiKey);
 }
 
-export function setCachedNvidiaModels(models: AIModel[]): void {
-  nvidiaModelCache = {
-    models,
-    timestamp: Date.now()
-  };
-}
-
-export function invalidateNvidiaCache(): void {
-  nvidiaModelCache = null;
+export function invalidateNvidiaCache(apiKey?: string): void {
+  invalidateModelCache('nvidia', apiKey);
 }
 
 /**

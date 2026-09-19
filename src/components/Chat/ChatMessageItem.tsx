@@ -9,7 +9,7 @@ import { ArtifactFileCard } from './ArtifactFileCard';
 import { ExecutionLogsDrawer } from './ExecutionLogsDrawer';
 import { sandboxRunner } from '../../sandbox/sandboxRunner';
 import { parseThinking } from '../../utils/thinkingParser';
-import { Copy, Check, AlertCircle, FileText } from 'lucide-react';
+import { Copy, Check, AlertCircle, FileText, ChevronDown } from 'lucide-react';
 
 interface ChatMessageProps {
   message: ChatMessage;
@@ -24,6 +24,7 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
 }) => {
   const { setModelSelectorOpen, setMessageExecution } = useAppStore();
   const [copied, setCopied] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const isUser = message.role === 'user';
 
   // Parse thinking and output separately
@@ -120,6 +121,42 @@ export const ChatMessageItem: React.FC<ChatMessageProps> = ({
               <div className="flex-1">
                 <div className="font-semibold text-red-400">Error Generating Response</div>
                 <div className="mt-0.5">{message.error}</div>
+
+                {message.errorDiagnostic && (
+                  <div className="mt-2 pt-2 border-t border-red-500/20">
+                    <button
+                      type="button"
+                      onClick={() => setShowDiagnostics(!showDiagnostics)}
+                      className="inline-flex items-center gap-1 text-[11px] text-red-300 hover:text-red-200 font-mono transition-colors"
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDiagnostics ? 'rotate-180' : ''}`} />
+                      <span>Diagnostics ({message.errorDiagnostic.provider || 'Provider'}{message.errorDiagnostic.statusCode ? ` · HTTP ${message.errorDiagnostic.statusCode}` : ''})</span>
+                    </button>
+                    {showDiagnostics && (
+                      <div className="mt-2 p-2.5 rounded-lg bg-black/40 border border-red-900/30 text-[11px] font-mono text-neutral-300 space-y-1 overflow-x-auto">
+                        {message.errorDiagnostic.provider && (
+                          <div><span className="text-neutral-500">Provider:</span> <span className="text-neutral-200">{message.errorDiagnostic.provider}</span></div>
+                        )}
+                        {message.errorDiagnostic.model && (
+                          <div><span className="text-neutral-500">Model:</span> <span className="text-emerald-400">{message.errorDiagnostic.model}</span></div>
+                        )}
+                        {message.errorDiagnostic.statusCode && (
+                          <div><span className="text-neutral-500">Status Code:</span> <span className="text-red-400">{message.errorDiagnostic.statusCode}</span></div>
+                        )}
+                        {message.errorDiagnostic.code && (
+                          <div><span className="text-neutral-500">Error Code:</span> <span className="text-amber-400">{message.errorDiagnostic.code}</span></div>
+                        )}
+                        {message.errorDiagnostic.requestId && (
+                          <div><span className="text-neutral-500">Request ID:</span> <span className="text-neutral-400">{message.errorDiagnostic.requestId}</span></div>
+                        )}
+                        {message.errorDiagnostic.providerMessage && message.errorDiagnostic.providerMessage !== message.error && (
+                          <div><span className="text-neutral-500">Provider Message:</span> <span className="text-neutral-300">{message.errorDiagnostic.providerMessage}</span></div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 mt-2.5">
                   {onRegenerate && (
                     <button

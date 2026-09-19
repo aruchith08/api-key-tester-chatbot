@@ -92,7 +92,11 @@ async function main() {
     const { runAgentToolsTests } = await server.ssrLoadModule('./tests/agent/agentTools.test.ts');
     await runAgentToolsTests(server, assert);
 
-    // 8. Integration suite (conditional on env keys)
+    // 8. Kimi K3, SSE Parser, Credential Isolation & Security Hardening
+    const { runKimiAndHardeningTests } = await server.ssrLoadModule('./tests/integration/kimi-and-hardening.test.ts');
+    await runKimiAndHardeningTests(server, assert);
+
+    // 9. Integration suite (conditional on env keys)
     const { runRealApiIntegrationTests } = await server.ssrLoadModule('./tests/integration/real-api.test.ts');
     await runRealApiIntegrationTests(server, assert, recordSkip);
 

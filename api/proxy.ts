@@ -28,6 +28,10 @@ const ALLOWED_EXACT_HOSTS = new Set([
   'bazaarlink.ai',
   'api.nrouter.ai',
   'nrouter.ai',
+  'api.cohere.com',
+  'api.cohere.ai',
+  'api.ai21.com',
+  'api.replicate.com'
 ]);
 
 const ALLOWED_SUFFIXES = [
@@ -51,35 +55,62 @@ const ALLOWED_SUFFIXES = [
   '.huggingface.co',
   '.moonshot.cn',
   '.aliyuncs.com',
+  '.cohere.com',
+  '.cohere.ai',
+  '.ai21.com',
+  '.replicate.com'
 ];
 
-function isPermittedUrl(rawUrl: string): boolean {
+export function isPrivateOrMetadataHost(hostname: string): boolean {
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === 'metadata.google.internal' ||
+    hostname.endsWith('.internal') ||
+    hostname.includes('.internal.') ||
+    hostname.endsWith('.local') ||
+    hostname.includes('.local.') ||
+    hostname.endsWith('.lan') ||
+    hostname.endsWith('.corp') ||
+    hostname === '169.254.169.254' ||
+    hostname === '::1' ||
+    hostname === '0.0.0.0' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('127.') ||
+    hostname.startsWith('10.') ||
+    hostname.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+    hostname.startsWith('fc') ||
+    hostname.startsWith('fe80')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isPermittedUrl(rawUrl: string, customHostHeader?: string | null): boolean {
   try {
     const parsed = new URL(rawUrl);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    if (parsed.protocol !== 'https:') {
       return false;
     }
 
     const hostname = parsed.hostname.toLowerCase();
 
-    if (ALLOWED_EXACT_HOSTS.has(hostname)) return true;
-    if (ALLOWED_SUFFIXES.some(suffix => hostname.endsWith(suffix))) return true;
-
     // Reject internal metadata & private IP ranges to prevent SSRF
-    if (
-      hostname === '169.254.169.254' ||
-      hostname === 'metadata.google.internal' ||
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname.startsWith('10.') ||
-      hostname.startsWith('192.168.') ||
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
-    ) {
+    if (isPrivateOrMetadataHost(hostname)) {
       return false;
     }
 
-    // Permit other custom HTTPS API endpoints
-    return parsed.protocol === 'https:';
+    if (ALLOWED_EXACT_HOSTS.has(hostname)) return true;
+    if (ALLOWED_SUFFIXES.some(suffix => hostname.endsWith(suffix))) return true;
+
+    // If client specified explicit custom provider host header matching target
+    if (customHostHeader && customHostHeader.toLowerCase() === hostname) {
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }
@@ -112,7 +143,8 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
-  if (!isPermittedUrl(targetUrl)) {
+  const customHost = req.headers.get('x-arh-custom-host');
+  if (!isPermittedUrl(targetUrl, customHost)) {
     return new Response(JSON.stringify({ error: 'Target URL host is not permitted by proxy allowlist policy' }), {
       status: 403,
       headers: {
@@ -125,7 +157,7 @@ export default async function handler(req: Request): Promise<Response> {
   const forwardHeaders: Record<string, string> = {};
   req.headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'].includes(lower)) {
+    if (!['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding', 'x-arh-custom-host'].includes(lower)) {
       forwardHeaders[key] = value;
     }
   });
@@ -137,6 +169,7 @@ export default async function handler(req: Request): Promise<Response> {
       method: req.method,
       headers: forwardHeaders,
       body: bodyBuffer,
+      redirect: 'manual',
     });
 
     const resHeaders: Record<string, string> = {

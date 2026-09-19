@@ -7,6 +7,7 @@ import type { ChatMessage } from '../../types/chat';
 import { sanitizeHeaders } from '../../utils/maskApiKey';
 import { classifyUniversalModel } from '../modelClassifier';
 import { getCachedModels, setCachedModels } from '../modelCache';
+import { SSEParser, type SSEParsedEvent } from '../../utils/sseParser';
 
 export class AnthropicAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -40,7 +41,7 @@ export class AnthropicAdapter implements AIProviderAdapter {
       const resolvedModels = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
       // Cache models in multi-provider cache
-      setCachedModels(this.provider.id, resolvedModels);
+      setCachedModels(this.provider.id, resolvedModels, apiKey);
 
       return {
         success: true,
@@ -63,7 +64,7 @@ export class AnthropicAdapter implements AIProviderAdapter {
         };
       }
 
-      const norm = err.normalized || normalizeError(err, err.status);
+      const norm = err.normalized || normalizeError(err, err.status, this.provider.name);
       return {
         success: false,
         provider: this.provider.name,
@@ -78,14 +79,18 @@ export class AnthropicAdapter implements AIProviderAdapter {
 
   public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
     if (!bypassCache) {
-      const cached = getCachedModels(this.provider.id);
+      const cached = getCachedModels(this.provider.id, apiKey);
       if (cached && cached.length > 0) {
         return cached;
       }
     }
 
+    if (!this.provider.modelsEndpoint) {
+      return this.provider.fallbackModels || [];
+    }
+
     try {
-      const modelsUrl = `${this.provider.baseUrl}/models`;
+      const modelsUrl = `${this.provider.baseUrl}${this.provider.modelsEndpoint}`;
       const res = await this.transport.request({
         url: modelsUrl,
         method: 'GET',
@@ -94,7 +99,7 @@ export class AnthropicAdapter implements AIProviderAdapter {
       const models = this.normalizeModels(res.data);
       const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
-      setCachedModels(this.provider.id, resolved);
+      setCachedModels(this.provider.id, resolved, apiKey);
       return resolved;
     } catch (err: any) {
       if (this.provider.fallbackModels && this.provider.fallbackModels.length > 0) {
@@ -357,7 +362,56 @@ export class AnthropicAdapter implements AIProviderAdapter {
       });
     }
 
-    let buffer = '';
+    const sseParser = new SSEParser();
+
+    const processEvent = (event: SSEParsedEvent): StreamEvent[] => {
+      const eventsToYield: StreamEvent[] = [];
+      if (event.isDone) return eventsToYield;
+      const data = event.parsedData;
+      if (!data) return eventsToYield;
+
+      if (data.type === 'message_start' && data.message?.usage) {
+        inputTokens = data.message.usage.input_tokens;
+      }
+
+      if (data.type === 'message_delta') {
+        if (data.usage) {
+          outputTokens = data.usage.output_tokens;
+          eventsToYield.push({
+            type: 'usage',
+            inputTokens,
+            outputTokens,
+            totalTokens: (inputTokens || 0) + (outputTokens || 0)
+          });
+        }
+        if (data.delta?.stop_reason) {
+          finishReason = data.delta.stop_reason;
+        }
+      }
+
+      if (data.type === 'content_block_delta') {
+        if (data.delta?.type === 'thinking_delta' && data.delta?.thinking) {
+          eventsToYield.push({
+            type: 'thinking',
+            content: data.delta.thinking
+          });
+        } else if (data.delta?.text) {
+          const textChunk = data.delta.text;
+          if (firstTokenTime === null) {
+            firstTokenTime = Date.now();
+          }
+
+          fullText += textChunk;
+          eventsToYield.push({
+            type: 'token',
+            content: textChunk
+          });
+        }
+      }
+
+      return eventsToYield;
+    };
+
     try {
       for await (const chunk of this.transport.stream({
         url,
@@ -366,63 +420,25 @@ export class AnthropicAdapter implements AIProviderAdapter {
         body: payload,
         signal: params.signal
       })) {
-        buffer += chunk;
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data: ')) continue;
-
-          const jsonStr = trimmed.substring(6);
-          try {
-            const data = JSON.parse(jsonStr);
-
-            if (data.type === 'message_start' && data.message?.usage) {
-              inputTokens = data.message.usage.input_tokens;
-            }
-
-            if (data.type === 'message_delta') {
-              if (data.usage) {
-                outputTokens = data.usage.output_tokens;
-                yield {
-                  type: 'usage',
-                  inputTokens,
-                  outputTokens,
-                  totalTokens: (inputTokens || 0) + (outputTokens || 0)
-                };
-              }
-              if (data.delta?.stop_reason) {
-                finishReason = data.delta.stop_reason;
-              }
-            }
-
-            if (data.type === 'content_block_delta') {
-              if (data.delta?.type === 'thinking_delta' && data.delta?.thinking) {
-                yield {
-                  type: 'thinking',
-                  content: data.delta.thinking
-                };
-              } else if (data.delta?.text) {
-                const textChunk = data.delta.text;
-                if (firstTokenTime === null) {
-                  firstTokenTime = Date.now();
-                }
-
-                fullText += textChunk;
-                yield {
-                  type: 'token',
-                  content: textChunk
-                };
-              }
-            }
-          } catch {
-            // Ignore unparseable SSE line
+        const events = sseParser.feed(chunk);
+        for (const ev of events) {
+          const yielded = processEvent(ev);
+          for (const out of yielded) {
+            yield out;
           }
         }
       }
+
+      // Flush trailing events without trailing newline
+      const trailingEvents = sseParser.flush();
+      for (const ev of trailingEvents) {
+        const yielded = processEvent(ev);
+        for (const out of yielded) {
+          yield out;
+        }
+      }
     } catch (err: any) {
-      yield { type: 'error', error: normalizeError(err) };
+      yield { type: 'error', error: normalizeError(err, err.status, this.provider.name, model) };
       return;
     }
 

@@ -7,6 +7,7 @@ import type { ChatMessage } from '../../types/chat';
 import { sanitizeUrl, sanitizeHeaders } from '../../utils/maskApiKey';
 import { classifyUniversalModel } from '../modelClassifier';
 import { getCachedModels, setCachedModels } from '../modelCache';
+import { SSEParser, type SSEParsedEvent } from '../../utils/sseParser';
 
 export class GeminiAdapter implements AIProviderAdapter {
   public provider: ProviderDefinition;
@@ -30,7 +31,7 @@ export class GeminiAdapter implements AIProviderAdapter {
       const resolvedModels = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
       // Cache models in multi-provider cache
-      setCachedModels(this.provider.id, resolvedModels);
+      setCachedModels(this.provider.id, resolvedModels, apiKey);
 
       return {
         success: true,
@@ -53,7 +54,7 @@ export class GeminiAdapter implements AIProviderAdapter {
         };
       }
 
-      const norm = err.normalized || normalizeError(err, err.status);
+      const norm = err.normalized || normalizeError(err, err.status, this.provider.name);
       return {
         success: false,
         provider: this.provider.name,
@@ -68,7 +69,7 @@ export class GeminiAdapter implements AIProviderAdapter {
 
   public async getModels(apiKey: string, bypassCache: boolean = false): Promise<AIModel[]> {
     if (!bypassCache) {
-      const cached = getCachedModels(this.provider.id);
+      const cached = getCachedModels(this.provider.id, apiKey);
       if (cached && cached.length > 0) {
         return cached;
       }
@@ -83,7 +84,7 @@ export class GeminiAdapter implements AIProviderAdapter {
       const models = this.normalizeModels(res.data);
       const resolved = models.length > 0 ? models : (this.provider.fallbackModels || []);
 
-      setCachedModels(this.provider.id, resolved);
+      setCachedModels(this.provider.id, resolved, apiKey);
       return resolved;
     } catch (err: any) {
       if (this.provider.fallbackModels && this.provider.fallbackModels.length > 0) {
@@ -251,6 +252,51 @@ export class GeminiAdapter implements AIProviderAdapter {
       });
     }
 
+    const sseParser = new SSEParser();
+
+    const processEvent = (event: SSEParsedEvent): StreamEvent[] => {
+      const eventsToYield: StreamEvent[] = [];
+      if (event.isDone) return eventsToYield;
+      const data = event.parsedData;
+      if (!data) return eventsToYield;
+
+      if (data.usageMetadata) {
+        usageMetadata = data.usageMetadata;
+        eventsToYield.push({
+          type: 'usage',
+          inputTokens: usageMetadata.promptTokenCount,
+          outputTokens: usageMetadata.candidatesTokenCount,
+          totalTokens: usageMetadata.totalTokenCount
+        });
+      }
+
+      const candidate = data.candidates?.[0];
+      if (candidate?.finishReason) {
+        finishReason = candidate.finishReason;
+      }
+
+      const parts = candidate?.content?.parts || [];
+      for (const p of parts) {
+        if (p.thought && p.text) {
+          eventsToYield.push({
+            type: 'thinking',
+            content: p.text
+          });
+        } else if (p.text) {
+          if (firstTokenTime === null) {
+            firstTokenTime = Date.now();
+          }
+          fullText += p.text;
+          eventsToYield.push({
+            type: 'token',
+            content: p.text
+          });
+        }
+      }
+
+      return eventsToYield;
+    };
+
     try {
       const streamChunks = this.transport.stream({
         url,
@@ -260,61 +306,26 @@ export class GeminiAdapter implements AIProviderAdapter {
         signal: params.signal
       });
 
-      let buffer = '';
-
       for await (const chunk of streamChunks) {
-        buffer += chunk;
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data: ')) continue;
-
-          const jsonStr = trimmed.substring(6);
-          try {
-            const data = JSON.parse(jsonStr);
-
-            if (data.usageMetadata) {
-              usageMetadata = data.usageMetadata;
-              yield {
-                type: 'usage',
-                inputTokens: usageMetadata.promptTokenCount,
-                outputTokens: usageMetadata.candidatesTokenCount,
-                totalTokens: usageMetadata.totalTokenCount
-              };
-            }
-
-            const candidate = data.candidates?.[0];
-            if (candidate?.finishReason) {
-              finishReason = candidate.finishReason;
-            }
-
-            const parts = candidate?.content?.parts || [];
-            for (const p of parts) {
-              if (p.thought && p.text) {
-                yield {
-                  type: 'thinking',
-                  content: p.text
-                };
-              } else if (p.text) {
-                if (firstTokenTime === null) {
-                  firstTokenTime = Date.now();
-                }
-                fullText += p.text;
-                yield {
-                  type: 'token',
-                  content: p.text
-                };
-              }
-            }
-          } catch (e) {
-            // Ignore unparseable SSE line
+        const events = sseParser.feed(chunk);
+        for (const ev of events) {
+          const yielded = processEvent(ev);
+          for (const out of yielded) {
+            yield out;
           }
         }
       }
+
+      // Flush trailing events
+      const trailingEvents = sseParser.flush();
+      for (const ev of trailingEvents) {
+        const yielded = processEvent(ev);
+        for (const out of yielded) {
+          yield out;
+        }
+      }
     } catch (err: any) {
-      const norm = err.normalized || normalizeError(err, err.status);
+      const norm = err.normalized || normalizeError(err, err.status, this.provider.name, model);
       yield { type: 'error', error: norm };
       return;
     }

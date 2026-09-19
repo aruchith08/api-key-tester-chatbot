@@ -30,22 +30,9 @@ export function useChat() {
     showNotification
   } = useAppStore();
 
-  const sendMessage = useCallback(async (content: string, attachments: MessageAttachment[] = []) => {
-    if (!apiKey) {
-      showNotification('Please configure an API key first.');
-      return;
-    }
-
-    if (!selectedProvider) {
-      showNotification('Please select an AI provider.');
-      return;
-    }
-
-    const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
-    let targetModel = getRuntimeModelId(selectedModel, selectedProvider.defaultModelId || 'default');
-
-    // Model existence check before request dispatch (Section 20 & 31)
-    const isNvidia = selectedProvider.id === 'nvidia' || selectedProvider.id === 'nvidia-nim';
+  const resolveRuntimeTargetModel = useCallback(async (adapter: any) => {
+    let targetModel = getRuntimeModelId(selectedModel, selectedProvider!.defaultModelId || 'default');
+    const isNvidia = selectedProvider!.id === 'nvidia' || selectedProvider!.id === 'nvidia-nim';
     if (isNvidia) {
       const currentModels = useAppStore.getState().models;
       const existsInCurrent = currentModels.some(m => m.id === targetModel || m.apiModelId === targetModel);
@@ -55,17 +42,17 @@ export function useChat() {
           invalidateNvidiaCache();
           const freshModels = await adapter.getModels(apiKey, true);
           useAppStore.getState().setModels(freshModels, selectedModel, 'live');
-          const stillExists = freshModels.find(m => m.id === targetModel || m.apiModelId === targetModel);
+          const stillExists = freshModels.find((m: any) => m.id === targetModel || m.apiModelId === targetModel);
           if (stillExists) {
             targetModel = getRuntimeModelId(stillExists, targetModel);
             useAppStore.getState().setSelectedModel(stillExists);
           } else {
             const fallback = 
-              freshModels.find(m => m.id === selectedProvider.defaultModelId || m.apiModelId === selectedProvider.defaultModelId) ||
-              freshModels.find(m => m.isDefault) ||
-              freshModels.find(m => (m.id.includes('llama-3.2-11b-vision') || m.id.includes('llama-3.1-8b') || m.id.includes('nemotron-70b')) && m.supportsChat) ||
-              freshModels.find(m => m.supportsChat && !m.id.startsWith('01-ai/')) ||
-              freshModels.find(m => m.supportsChat) ||
+              freshModels.find((m: any) => m.id === selectedProvider!.defaultModelId || m.apiModelId === selectedProvider!.defaultModelId) ||
+              freshModels.find((m: any) => m.isDefault) ||
+              freshModels.find((m: any) => (m.id.includes('llama-3.2-11b-vision') || m.id.includes('llama-3.1-8b') || m.id.includes('nemotron-70b')) && m.supportsChat) ||
+              freshModels.find((m: any) => m.supportsChat && !m.id.startsWith('01-ai/')) ||
+              freshModels.find((m: any) => m.supportsChat) ||
               freshModels[0];
             if (fallback) {
               targetModel = getRuntimeModelId(fallback, targetModel);
@@ -86,14 +73,14 @@ export function useChat() {
         });
       }
     }
+    return targetModel;
+  }, [apiKey, selectedProvider, selectedModel, showNotification]);
 
-    // 1. Add user message
-    addUserMessage(content, attachments);
+  const runGeneration = useCallback(async (targetModel: string, initialAssistantMsgId: string) => {
+    let assistantMsgId = initialAssistantMsgId;
+    const adapter = ProviderRegistry.resolveAdapter(selectedProvider!);
 
-    // 2. Add assistant placeholder
-    let assistantMsgId = addAssistantPlaceholder();
-
-    // 3. Create abort controller
+    // Create abort controller
     const controller = new AbortController();
     setGenerating(true, controller);
 
@@ -193,7 +180,7 @@ export function useChat() {
               break;
             }
 
-            setAssistantError(assistantMsgId, event.error.message);
+            setAssistantError(assistantMsgId, event.error.message, event.error);
             updateVerificationStage('chat', {
               status: 'FAILED',
               durationMs: Date.now() - chatStartTime,
@@ -351,7 +338,7 @@ export function useChat() {
       }
 
       const errMsg = err.message || 'An error occurred during response generation.';
-      setAssistantError(assistantMsgId, errMsg);
+      setAssistantError(assistantMsgId, errMsg, err.normalized);
       updateVerificationStage('chat', {
         status: 'FAILED',
         durationMs: Date.now() - chatStartTime,
@@ -363,9 +350,7 @@ export function useChat() {
   }, [
     apiKey,
     selectedProvider,
-    selectedModel,
     isAgentMode,
-    addUserMessage,
     addAssistantPlaceholder,
     updateAssistantMessage,
     addToolMessage,
@@ -374,29 +359,83 @@ export function useChat() {
     updateVerificationStage,
     setLastRequest,
     setLastResponse,
-    setPerformanceMetrics,
+    setPerformanceMetrics
+  ]);
+
+  const sendMessage = useCallback(async (content: string, attachments: MessageAttachment[] = []) => {
+    if (!apiKey) {
+      showNotification('Please configure an API key first.');
+      return;
+    }
+
+    if (!selectedProvider) {
+      showNotification('Please select an AI provider.');
+      return;
+    }
+
+    const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
+    const targetModel = await resolveRuntimeTargetModel(adapter);
+
+    // 1. Add user message
+    addUserMessage(content, attachments);
+
+    // 2. Add assistant placeholder
+    const assistantMsgId = addAssistantPlaceholder();
+
+    // 3. Run generation turn
+    await runGeneration(targetModel, assistantMsgId);
+  }, [
+    apiKey,
+    selectedProvider,
+    resolveRuntimeTargetModel,
+    addUserMessage,
+    addAssistantPlaceholder,
+    runGeneration,
     showNotification
   ]);
 
   const regenerate = useCallback(async () => {
-    const currentMessages = useAppStore.getState().messages;
-    if (currentMessages.length === 0 || isGenerating) return;
-
-    // Find latest user message
-    const lastUserMsg = [...currentMessages].reverse().find(m => m.role === 'user');
-    if (!lastUserMsg) return;
-
-    // Remove latest assistant message
-    const lastMsg = currentMessages[currentMessages.length - 1];
-    if (lastMsg.role === 'assistant') {
-      useAppStore.setState({
-        messages: currentMessages.slice(0, currentMessages.length - 1)
-      });
+    if (!apiKey) {
+      showNotification('Please configure an API key first.');
+      return;
     }
 
-    // Re-dispatch latest prompt
-    await sendMessage(lastUserMsg.content, lastUserMsg.attachments);
-  }, [isGenerating, sendMessage]);
+    if (!selectedProvider) {
+      showNotification('Please select an AI provider.');
+      return;
+    }
+
+    if (isGenerating) return;
+
+    const currentMessages = useAppStore.getState().messages;
+    if (currentMessages.length === 0) return;
+
+    // Find latest user message index
+    const lastUserIndex = currentMessages.map(m => m.role).lastIndexOf('user');
+    if (lastUserIndex === -1) return;
+
+    // Remove any trailing assistant/tool messages back to the last user message
+    useAppStore.setState({
+      messages: currentMessages.slice(0, lastUserIndex + 1)
+    });
+
+    const adapter = ProviderRegistry.resolveAdapter(selectedProvider);
+    const targetModel = await resolveRuntimeTargetModel(adapter);
+
+    // Add assistant placeholder for the regenerated turn WITHOUT re-adding user message
+    const assistantMsgId = addAssistantPlaceholder();
+
+    // Run generation
+    await runGeneration(targetModel, assistantMsgId);
+  }, [
+    apiKey,
+    selectedProvider,
+    isGenerating,
+    resolveRuntimeTargetModel,
+    addAssistantPlaceholder,
+    runGeneration,
+    showNotification
+  ]);
 
   return {
     sendMessage,
