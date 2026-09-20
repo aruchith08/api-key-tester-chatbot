@@ -96,7 +96,11 @@ async function main() {
     const { runKimiAndHardeningTests } = await server.ssrLoadModule('./tests/integration/kimi-and-hardening.test.ts');
     await runKimiAndHardeningTests(server, assert);
 
-    // 9. Integration suite (conditional on env keys)
+    // 9. API Key Storage & Key Vault suite
+    const { runStorageTests } = await server.ssrLoadModule('./tests/storage/storage.test.ts');
+    await runStorageTests(server, assert);
+
+    // 10. Integration suite (conditional on env keys)
     const { runRealApiIntegrationTests } = await server.ssrLoadModule('./tests/integration/real-api.test.ts');
     await runRealApiIntegrationTests(server, assert, recordSkip);
 

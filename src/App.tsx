@@ -2,6 +2,7 @@ import React from 'react';
 import { HomeScreen } from './components/Home/HomeScreen';
 import { ChatConversation } from './components/Chat/ChatConversation';
 import { AddApiKeyModal } from './components/API/AddApiKeyModal';
+import { StoredKeysModal } from './components/API/StoredKeysModal';
 import { ModelSelector } from './components/Chat/ModelSelector';
 import { DeveloperMode } from './components/Developer/DeveloperMode';
 import { AboutModal } from './components/About/AboutModal';
@@ -38,6 +39,7 @@ export function App() {
 
       {/* Modals & Drawers */}
       <AddApiKeyModal />
+      <StoredKeysModal />
       <ModelSelector />
       <DeveloperMode />
       <AboutModal />

@@ -5,6 +5,10 @@ import type { ChatMessage, MessageAttachment, CodeExecutionState, ToolCall, Gene
 import type { InspectorRequestData, InspectorResponseData, PerformanceMetricsData } from '../types/capabilities';
 import type { ProviderSessionVerification, VerificationStageResult } from '../types/verification';
 import { createInitialVerification, calculateOverallStatus } from '../types/verification';
+import type { StoredApiKey } from '../types/storage';
+import { ApiKeyStorage } from '../services/apiKeyStorage';
+import { ProviderRegistry } from '../providers/registry';
+import { resolveConnectionStrategy } from '../providers/transport/resolver';
 
 export type ConnectionState = 
   | 'idle' 
@@ -85,6 +89,13 @@ interface AppState {
   setChatState: (state: ChatState) => void;
   setAgentMode: (enabled: boolean) => void;
   
+  // Stored Keys (Key Vault)
+  storedKeys: StoredApiKey[];
+  isKeyVaultOpen: boolean;
+  setKeyVaultOpen: (open: boolean) => void;
+  refreshStoredKeys: () => void;
+  connectStoredKey: (storedKeyId: string) => Promise<{ success: boolean; error?: string }>;
+
   // Modal & Panel Toggles
   setApiKeyModalOpen: (open: boolean) => void;
   setModelSelectorOpen: (open: boolean) => void;
@@ -134,6 +145,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   abortController: null,
   isAgentMode: true,
   
+  storedKeys: ApiKeyStorage.getAll(),
+  isKeyVaultOpen: false,
   isApiKeyModalOpen: false,
   isModelSelectorOpen: false,
   isDeveloperModeOpen: false,
@@ -224,6 +237,142 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedModel: (selectedModel) => set({ selectedModel }),
   setAgentMode: (isAgentMode) => set({ isAgentMode }),
   
+  setKeyVaultOpen: (isKeyVaultOpen) => set({ isKeyVaultOpen }),
+  refreshStoredKeys: () => set({ storedKeys: ApiKeyStorage.getAll() }),
+
+  connectStoredKey: async (storedKeyId) => {
+    const item = ApiKeyStorage.getById(storedKeyId);
+    if (!item) {
+      return { success: false, error: 'Key not found in storage vault.' };
+    }
+
+    let provider = ProviderRegistry.getById(item.providerId);
+    if (!provider && item.customConfig?.baseUrl) {
+      provider = ProviderRegistry.createCustomProvider({
+        baseUrl: item.customConfig.baseUrl,
+        chatEndpoint: item.customConfig.chatEndpoint,
+        authHeader: item.customConfig.authHeader,
+        customHeaders: item.customConfig.customHeaders,
+        modelId: item.customConfig.manualModelId
+      });
+    } else if (!provider) {
+      const searchResults = ProviderRegistry.search(item.providerName);
+      if (searchResults.length > 0) {
+        provider = searchResults[0];
+      }
+    }
+
+    if (!provider) {
+      return { success: false, error: `Provider "${item.providerName}" (${item.providerId}) is not recognized.` };
+    }
+
+    get().initSessionVerification(provider.id, provider.name);
+    get().updateVerificationStage('providerDetection', {
+      status: 'PASSED',
+      details: `Restored from saved key: ${item.name}`
+    });
+
+    const strategy = resolveConnectionStrategy(provider);
+    get().setResolvedStrategy(strategy);
+    get().updateVerificationStage('connectionStrategy', {
+      status: 'PASSED',
+      details: `${strategy.mode} via ${strategy.transport} transport`
+    });
+
+    get().setConnectionState('connecting');
+    get().updateVerificationStage('authentication', { status: 'RUNNING' });
+    const authStartTime = Date.now();
+
+    try {
+      const adapter = ProviderRegistry.resolveAdapter(provider);
+      const result = await adapter.validateConnection(item.apiKey);
+
+      if (!result.success) {
+        get().setConnectionState('error', result.error?.message || 'Authentication rejected');
+        get().updateVerificationStage('authentication', {
+          status: 'FAILED',
+          durationMs: Date.now() - authStartTime,
+          error: result.error?.message || 'Authentication rejected'
+        });
+        ApiKeyStorage.update(item.id, { lastStatus: 'invalid', lastLatencyMs: result.latencyMs });
+        get().refreshStoredKeys();
+        return { success: false, error: result.error?.message || 'Authentication rejected by provider.' };
+      }
+
+      get().updateVerificationStage('authentication', {
+        status: 'PASSED',
+        durationMs: result.latencyMs || (Date.now() - authStartTime),
+        details: `HTTP ${result.status || 200} OK`
+      });
+
+      get().setConnectionState('discovering_models');
+      get().updateVerificationStage('modelDiscovery', { status: 'RUNNING' });
+      const discoveryStartTime = Date.now();
+
+      let models = result.models || [];
+      let source: 'live' | 'fallback' = 'live';
+
+      if (models.length === 0) {
+        try {
+          models = await adapter.getModels(item.apiKey);
+        } catch (e) {
+          // fallback to catalog
+        }
+      }
+
+      if (models.length === 0 && provider.fallbackModels && provider.fallbackModels.length > 0) {
+        models = provider.fallbackModels;
+        source = 'fallback';
+      }
+
+      if (models.length === 0 && item.customConfig?.manualModelId) {
+        models = [{
+          id: item.customConfig.manualModelId,
+          name: item.customConfig.manualModelId,
+          provider: provider.name,
+          isDefault: true,
+          capabilities: { ...provider.capabilities }
+        }];
+        source = 'fallback';
+      }
+
+      get().updateVerificationStage('modelDiscovery', {
+        status: 'PASSED',
+        durationMs: Date.now() - discoveryStartTime,
+        details: `${models.length} model(s) available (${source === 'live' ? 'Live Provider API' : 'Fallback Catalog'})`
+      });
+
+      const chosenModel = models.find((m) => m.isDefault) || models[0] || null;
+      get().updateVerificationStage('modelSelection', {
+        status: 'PASSED',
+        details: chosenModel ? `Selected: ${chosenModel.id}` : 'Default model'
+      });
+
+      get().setApiKey(item.apiKey);
+      get().setSelectedProvider(provider);
+      if (item.customConfig) {
+        get().setCustomConfig(item.customConfig);
+      }
+      get().setConnectionState('ready');
+      get().setModels(models, null, source);
+
+      ApiKeyStorage.update(item.id, {
+        lastStatus: 'valid',
+        lastLatencyMs: result.latencyMs,
+        lastUsedAt: Date.now()
+      });
+      get().refreshStoredKeys();
+
+      get().showNotification(`Connected to ${provider.name} (${item.name})!`);
+      return { success: true };
+    } catch (err: any) {
+      get().setConnectionState('error', err.message || 'Connection error');
+      ApiKeyStorage.update(item.id, { lastStatus: 'invalid' });
+      get().refreshStoredKeys();
+      return { success: false, error: err.message || 'Connection error. Please check network.' };
+    }
+  },
+
   setApiKeyModalOpen: (isApiKeyModalOpen) => set({ isApiKeyModalOpen }),
   setModelSelectorOpen: (isModelSelectorOpen) => set({ isModelSelectorOpen }),
   setDeveloperModeOpen: (isDeveloperModeOpen) => set({ isDeveloperModeOpen }),

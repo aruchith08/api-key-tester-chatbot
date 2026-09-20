@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/appStore';
 import { ChatMessageItem } from './ChatMessageItem';
 import { ChatInput } from './ChatInput';
 import { ARHLogo } from '../Home/ARHLogo';
-import { RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info } from 'lucide-react';
+import { RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info, Database } from 'lucide-react';
 import type { MessageAttachment } from '../../types/chat';
 
 interface ChatConversationProps {
@@ -23,6 +23,8 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
     setModelSelectorOpen,
     setDeveloperModeOpen,
     setAboutModalOpen,
+    setKeyVaultOpen,
+    storedKeys,
     clearChat
   } = useAppStore();
 
@@ -111,6 +113,20 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Clear</span>
+          </button>
+
+          {/* Stored Keys Vault */}
+          <button
+            type="button"
+            onClick={() => setKeyVaultOpen(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors"
+            title="Switch or manage stored API keys"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden sm:inline">Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">
+              {storedKeys.length}
+            </span>
           </button>
 
           {/* About */}

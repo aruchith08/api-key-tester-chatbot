@@ -2,7 +2,7 @@ import React from 'react';
 import { ARHLogo } from './ARHLogo';
 import { Greeting } from './Greeting';
 import { ChatInput } from '../Chat/ChatInput';
-import { KeyRound, Sparkles, Terminal, Info } from 'lucide-react';
+import { KeyRound, Sparkles, Terminal, Info, Database } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import type { MessageAttachment } from '../../types/chat';
 
@@ -13,6 +13,8 @@ interface HomeScreenProps {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
   const { 
     setApiKeyModalOpen, 
+    setKeyVaultOpen,
+    storedKeys,
     setDeveloperModeOpen,
     setAboutModalOpen,
     apiKey, 
@@ -32,18 +34,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
 
       {/* Top Header Bar */}
       <header className="relative z-10 flex items-center justify-between w-full max-w-7xl mx-auto">
-        {/* Top-Left: Add API Key Button */}
-        <button
-          type="button"
-          onClick={() => setApiKeyModalOpen(true)}
-          className="group flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[#141416] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#252529] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm shadow-black/30 transition-all duration-200"
-        >
-          <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-          <span>{isConnected ? (selectedProvider?.name || 'API Key Connected') : 'Add API Key'}</span>
-          {isConnected && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
-          )}
-        </button>
+        {/* Top-Left: Add API Key & Stored Keys Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setApiKeyModalOpen(true)}
+            className="group flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[#141416] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#252529] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm shadow-black/30 transition-all duration-200"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+            <span>{isConnected ? (selectedProvider?.name || 'API Key Connected') : 'Add API Key'}</span>
+            {isConnected && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setKeyVaultOpen(true)}
+            className="group flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-[#141416] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#252529] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm shadow-black/30 transition-all duration-200"
+            title="Open Stored API Keys Vault"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden xs:inline sm:inline">Stored Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700">
+              {storedKeys.length}
+            </span>
+          </button>
+        </div>
 
         {/* Top-Right: About & Developer Mode Triggers */}
         <div className="flex items-center gap-2">

@@ -9,7 +9,9 @@ import { ProviderRegistry } from '../../providers/registry';
 import { resolveConnectionStrategy } from '../../providers/transport/resolver';
 import { useAppStore } from '../../store/appStore';
 import type { ProviderDefinition } from '../../types/provider';
-import { X, Lock, CheckCircle2, AlertCircle, Loader2, ArrowRight, ShieldAlert } from 'lucide-react';
+import { X, Lock, CheckCircle2, AlertCircle, Loader2, ArrowRight, ShieldAlert, Database } from 'lucide-react';
+import { ApiKeyStorage } from '../../services/apiKeyStorage';
+import type { StorageTarget } from '../../types/storage';
 
 export const AddApiKeyModal: React.FC = () => {
   const {
@@ -26,7 +28,10 @@ export const AddApiKeyModal: React.FC = () => {
     setCustomConfig,
     setConnectionState,
     setModels,
-    showNotification
+    showNotification,
+    storedKeys,
+    setKeyVaultOpen,
+    refreshStoredKeys
   } = useAppStore();
 
   const [inputKey, setInputKey] = useState(storedKey || '');
@@ -78,6 +83,9 @@ export const AddApiKeyModal: React.FC = () => {
     customHeaders: storedCustomConfig.customHeaders || '',
     manualModelId: storedCustomConfig.manualModelId || '',
   });
+
+  const [saveToStorage, setSaveToStorage] = useState(true);
+  const [storageTarget, setStorageTarget] = useState<StorageTarget>('localStorage');
 
   // Authoritative single effective provider:
   // If user explicitly chose a provider, use that.
@@ -342,6 +350,20 @@ export const AddApiKeyModal: React.FC = () => {
         count: models.length
       });
 
+      // Save to Browser Storage if user opted in
+      if (saveToStorage) {
+        ApiKeyStorage.save({
+          name: `${targetProvider.name} Key`,
+          providerId: targetProvider.id,
+          providerName: targetProvider.name,
+          apiKey: key,
+          storageTarget,
+          customConfig: advanced.baseUrl ? advanced : undefined,
+          lastStatus: 'valid'
+        });
+        refreshStoredKeys();
+      }
+
       showNotification(`Connected to ${targetProvider.name} (${models.length} model${models.length === 1 ? '' : 's'} ready).`);
 
       // Smooth auto-close after 1s
@@ -374,20 +396,51 @@ export const AddApiKeyModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Title and Close Button */}
-        <div className="flex items-center justify-between pb-3">
+        <div className="flex items-center justify-between pb-3 border-b border-[#222226]">
           <div>
-            <h2 className="text-base sm:text-lg font-medium text-white tracking-tight">Add API Key</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-medium text-white tracking-tight">Add API Key</h2>
+              {storedKeys.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApiKeyModalOpen(false);
+                    setKeyVaultOpen(true);
+                  }}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-semibold transition-colors"
+                  title="Open Key Vault"
+                >
+                  <Database className="w-3 h-3" />
+                  <span>{storedKeys.length} Stored</span>
+                </button>
+              )}
+            </div>
             <p className="text-xs text-neutral-400 mt-0.5">
-              Paste an AI API key to get started.
+              Paste an AI API key to get started or connect a stored key.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setApiKeyModalOpen(false)}
-            className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setApiKeyModalOpen(false);
+                setKeyVaultOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#17171A] hover:bg-[#202025] text-neutral-300 hover:text-white border border-[#2B2B32] rounded-xl text-xs transition-colors"
+              title="Open Stored Keys Vault"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Stored Keys</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setApiKeyModalOpen(false)}
+              className="p-1.5 text-neutral-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
@@ -400,6 +453,32 @@ export const AddApiKeyModal: React.FC = () => {
               onChange={handleKeyChange}
               disabled={isLoading}
             />
+          </div>
+
+          {/* Storage persistence toggle */}
+          <div className="flex items-center justify-between p-2.5 bg-[#151518] border border-[#26262B] rounded-xl text-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={saveToStorage}
+                onChange={(e) => setSaveToStorage(e.target.checked)}
+                className="w-3.5 h-3.5 rounded bg-[#1F1F24] border-neutral-700 text-emerald-500 focus:ring-emerald-500/20"
+              />
+              <span className="text-neutral-300 font-medium text-[11px] sm:text-xs">
+                Save to browser storage for instant reconnect
+              </span>
+            </label>
+
+            {saveToStorage && (
+              <select
+                value={storageTarget}
+                onChange={(e) => setStorageTarget(e.target.value as StorageTarget)}
+                className="bg-[#0E0E10] border border-[#2D2D35] rounded-lg px-2 py-0.5 text-[10px] sm:text-[11px] text-neutral-300 focus:outline-hidden"
+              >
+                <option value="localStorage">Local Storage</option>
+                <option value="sessionStorage">Session Storage</option>
+              </select>
+            )}
           </div>
 
           {/* Provider Detection Banner */}
