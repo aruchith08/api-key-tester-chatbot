@@ -73,11 +73,10 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           <button
             type="button"
             onClick={clearChat}
-            className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+            className="flex items-center hover:opacity-90 transition-opacity cursor-pointer"
             title="Return to Home"
           >
-            <Atom className="w-5 h-5 text-white stroke-[1.6]" />
-            <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100 hidden sm:inline">ARH</span>
+            <ARHLogo size="xs" />
           </button>
 
           <div className="h-4 w-px bg-neutral-800 hidden md:block" />

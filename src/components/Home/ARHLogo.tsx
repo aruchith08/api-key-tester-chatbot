@@ -7,7 +7,7 @@ interface ARHLogoProps {
 
 export const ARHLogo: React.FC<ARHLogoProps> = ({ className = '', size = 'md' }) => {
   const sizeClasses = {
-    xs: 'w-[40px] sm:w-[48px]',
+    xs: 'h-6 sm:h-7 w-auto',
     sm: 'w-[110px] md:w-[130px]',
     md: 'w-[130px] sm:w-[150px] md:w-[170px]',
     lg: 'w-[150px] sm:w-[180px] md:w-[210px]',

@@ -56,14 +56,11 @@ export const DualChatWorkspace: React.FC = () => {
         {/* Top-Left: ARH Logo & Mode tag */}
         <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div 
-            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-90"
+            className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
             title="ARH Playground"
           >
-            <Atom className="w-5 h-5 text-white stroke-[1.6]" />
-            <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100 hidden sm:inline">
-              ARH
-            </span>
+            <ARHLogo size="xs" />
           </div>
 
           <div className="h-4 w-px bg-neutral-800 hidden xs:block" />

@@ -38,14 +38,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       {/* Top Header Bar */}
       <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-7xl mx-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="justify-self-start flex items-center gap-3 shrink-0">
+        <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div 
-            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-90"
+            className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
             title="ARH"
           >
-            <Atom className="w-6 h-6 text-white stroke-[1.6]" />
-            <span className="font-semibold tracking-wider text-base text-neutral-100">ARH</span>
+            <ARHLogo size="xs" />
           </div>
           <div className="h-4 w-px bg-neutral-800" aria-hidden="true" />
           <span className="text-xs sm:text-sm text-neutral-400 font-normal tracking-wide hidden xs:inline">
