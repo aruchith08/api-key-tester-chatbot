@@ -132,11 +132,11 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           {/* Dual Chat */}
           <button
             type="button"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#141416] hover:bg-[#1C1C20] border border-[#28282E] hover:border-[#3A3A42] rounded-xl text-xs sm:text-sm font-medium text-neutral-200 hover:text-white transition-all cursor-pointer shadow-sm"
             title="Dual Chat"
           >
-            <Columns2 className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden sm:inline">Dual chat</span>
+            <Columns2 className="w-4 h-4 text-neutral-400" />
+            <span className="inline">Dual chat</span>
           </button>
 
           {/* About */}

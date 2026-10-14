@@ -66,10 +66,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141416]/70 hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#141416]/90 hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#26262B] hover:border-[#383840] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all cursor-pointer"
             title="Dual Chat"
           >
-            <Columns2 className="w-3.5 h-3.5 text-neutral-400" />
+            <Columns2 className="w-4 h-4 text-neutral-400" />
             <span className="inline">Dual chat</span>
           </button>
 
