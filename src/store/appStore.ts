@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Model, ProviderDefinition, ConnectionResult, ResolvedConnectionStrategy } from '../types/provider';
 import type { NormalizedError } from '../providers/types';
-import type { ChatMessage, MessageAttachment, CodeExecutionState, ToolCall, GeneratedFile } from '../types/chat';
+import type { ChatMessage, MessageAttachment, CodeExecutionState, ToolCall, GeneratedFile, DualChatMessage, DualMessageResponse } from '../types/chat';
 import type { InspectorRequestData, InspectorResponseData, PerformanceMetricsData } from '../types/capabilities';
 import type { ProviderSessionVerification, VerificationStageResult } from '../types/verification';
 import { createInitialVerification, calculateOverallStatus } from '../types/verification';
@@ -65,6 +65,15 @@ interface AppState {
   isGenerating: boolean;
   abortController: AbortController | null;
   isAgentMode: boolean;
+
+  // Dual Chat Session
+  dualMessages: DualChatMessage[];
+  dualModelA: Model | null;
+  dualModelB: Model | null;
+  dualProviderA: ProviderDefinition | null;
+  dualProviderB: ProviderDefinition | null;
+  isDualGenerating: boolean;
+  dualAbortController: AbortController | null;
   
   // UI States
   activeChatTab: 'chat' | 'dual';
@@ -118,6 +127,16 @@ interface AppState {
   setGenerating: (generating: boolean, controller?: AbortController | null) => void;
   stopGeneration: () => void;
   clearChat: () => void;
+
+  // Dual Chat Actions
+  setDualModelA: (model: Model | null, provider?: ProviderDefinition | null) => void;
+  setDualModelB: (model: Model | null, provider?: ProviderDefinition | null) => void;
+  addDualMessagePlaceholder: (prompt: string, attachments?: MessageAttachment[]) => string;
+  updateDualResponseA: (id: string, update: Partial<DualMessageResponse>) => void;
+  updateDualResponseB: (id: string, update: Partial<DualMessageResponse>) => void;
+  setDualGenerating: (isGenerating: boolean, controller?: AbortController | null) => void;
+  stopDualGeneration: () => void;
+  clearDualChat: () => void;
   
   // Developer Inspector
   setLastRequest: (req: InspectorRequestData) => void;
@@ -146,6 +165,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   isGenerating: false,
   abortController: null,
   isAgentMode: true,
+
+  dualMessages: [],
+  dualModelA: null,
+  dualModelB: null,
+  dualProviderA: null,
+  dualProviderB: null,
+  isDualGenerating: false,
+  dualAbortController: null,
   
   activeChatTab: 'chat',
   setActiveChatTab: (activeChatTab) => set({ activeChatTab }),
@@ -235,10 +262,21 @@ export const useAppStore = create<AppState>((set, get) => ({
                pool.find(m => m.supportsChat) || 
                pool[0];
     }
-    set({ models: pool, selectedModel: chosen, modelSource: source });
+    set((state) => ({
+      models: pool,
+      selectedModel: chosen,
+      modelSource: source,
+      dualModelA: state.dualModelA || chosen,
+      dualModelB: state.dualModelB || (pool.length > 1 ? pool[1] : chosen),
+      dualProviderA: state.dualProviderA || state.selectedProvider,
+      dualProviderB: state.dualProviderB || state.selectedProvider,
+    }));
   },
   
-  setSelectedModel: (selectedModel) => set({ selectedModel }),
+  setSelectedModel: (selectedModel) => set((state) => ({
+    selectedModel,
+    dualModelA: state.dualModelA || selectedModel
+  })),
   setAgentMode: (isAgentMode) => set({ isAgentMode }),
   
   setKeyVaultOpen: (isKeyVaultOpen) => set({ isKeyVaultOpen }),
@@ -484,6 +522,86 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { abortController } = get();
     if (abortController) abortController.abort();
     set({ messages: [], chatState: 'idle', isGenerating: false, abortController: null });
+  },
+
+  setDualModelA: (dualModelA, dualProviderA) => {
+    set((state) => ({
+      dualModelA,
+      dualProviderA: dualProviderA !== undefined ? dualProviderA : (state.dualProviderA || state.selectedProvider)
+    }));
+  },
+
+  setDualModelB: (dualModelB, dualProviderB) => {
+    set((state) => ({
+      dualModelB,
+      dualProviderB: dualProviderB !== undefined ? dualProviderB : (state.dualProviderB || state.selectedProvider)
+    }));
+  },
+
+  addDualMessagePlaceholder: (prompt, attachments = []) => {
+    const id = 'dual_msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const { dualModelA, dualModelB, selectedModel, dualProviderA, dualProviderB, selectedProvider } = get();
+    const modelA = dualModelA || selectedModel;
+    const modelB = dualModelB || selectedModel;
+    const providerA = dualProviderA || selectedProvider;
+    const providerB = dualProviderB || selectedProvider;
+
+    const newDualMessage: DualChatMessage = {
+      id,
+      timestamp: Date.now(),
+      userPrompt: prompt,
+      attachments,
+      responseA: {
+        modelId: modelA?.id || 'model-a',
+        modelName: modelA?.name || modelA?.id || 'Model A',
+        providerId: providerA?.id || 'provider-a',
+        providerName: providerA?.name || 'Provider A',
+        content: '',
+        isStreaming: true
+      },
+      responseB: {
+        modelId: modelB?.id || 'model-b',
+        modelName: modelB?.name || modelB?.id || 'Model B',
+        providerId: providerB?.id || 'provider-b',
+        providerName: providerB?.name || 'Provider B',
+        content: '',
+        isStreaming: true
+      }
+    };
+    set((state) => ({ dualMessages: [...state.dualMessages, newDualMessage] }));
+    return id;
+  },
+
+  updateDualResponseA: (id, update) => {
+    set((state) => ({
+      dualMessages: state.dualMessages.map((m) =>
+        m.id === id ? { ...m, responseA: { ...m.responseA, ...update } } : m
+      )
+    }));
+  },
+
+  updateDualResponseB: (id, update) => {
+    set((state) => ({
+      dualMessages: state.dualMessages.map((m) =>
+        m.id === id ? { ...m, responseB: { ...m.responseB, ...update } } : m
+      )
+    }));
+  },
+
+  setDualGenerating: (isDualGenerating, dualAbortController = null) => {
+    set({ isDualGenerating, dualAbortController });
+  },
+
+  stopDualGeneration: () => {
+    const { dualAbortController } = get();
+    if (dualAbortController) dualAbortController.abort();
+    set({ isDualGenerating: false, dualAbortController: null });
+  },
+
+  clearDualChat: () => {
+    const { dualAbortController } = get();
+    if (dualAbortController) dualAbortController.abort();
+    set({ dualMessages: [], isDualGenerating: false, dualAbortController: null });
   },
   
   setLastRequest: (lastRequest) => set({ lastRequest }),

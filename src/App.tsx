@@ -1,6 +1,7 @@
 import React from 'react';
 import { HomeScreen } from './components/Home/HomeScreen';
 import { ChatConversation } from './components/Chat/ChatConversation';
+import { DualChatWorkspace } from './components/DualChat/DualChatWorkspace';
 import { AddApiKeyModal } from './components/API/AddApiKeyModal';
 import { StoredKeysModal } from './components/API/StoredKeysModal';
 import { ModelSelector } from './components/Chat/ModelSelector';
@@ -12,7 +13,7 @@ import { useChat } from './hooks/useChat';
 import { AlertCircle } from 'lucide-react';
 
 export function App() {
-  const { messages, notification, clearNotification } = useAppStore();
+  const { messages, activeChatTab, notification, clearNotification } = useAppStore();
   const { sendMessage, regenerate } = useChat();
 
   const isConversationActive = messages.length > 0;
@@ -30,8 +31,10 @@ export function App() {
         </div>
       )}
 
-      {/* Main View: Minimal Home or Active Conversation */}
-      {!isConversationActive ? (
+      {/* Main View: Dual Chat Workspace OR Single AI Home/Conversation */}
+      {activeChatTab === 'dual' ? (
+        <DualChatWorkspace />
+      ) : !isConversationActive ? (
         <HomeScreen onSendMessage={sendMessage} />
       ) : (
         <ChatConversation onSendMessage={sendMessage} onRegenerate={regenerate} />

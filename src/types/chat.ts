@@ -64,3 +64,31 @@ export interface ChatState {
   isGenerating: boolean;
   streamingContent: string;
 }
+
+export interface DualMessageResponse {
+  modelId: string;
+  modelName: string;
+  providerId: string;
+  providerName: string;
+  content: string;
+  thinking?: string;
+  isStreaming?: boolean;
+  error?: string;
+  errorDiagnostic?: NormalizedError;
+  metrics?: {
+    ttftMs?: number;
+    totalDurationMs?: number;
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
+export interface DualChatMessage {
+  id: string;
+  timestamp: number;
+  userPrompt: string;
+  attachments?: MessageAttachment[];
+  responseA: DualMessageResponse;
+  responseB: DualMessageResponse;
+}

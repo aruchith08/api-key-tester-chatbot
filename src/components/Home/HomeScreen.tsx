@@ -2,6 +2,7 @@ import React from 'react';
 import { ARHLogo } from './ARHLogo';
 import { Greeting } from './Greeting';
 import { ChatInput } from '../Chat/ChatInput';
+import { ChatModeToggle } from '../Navigation/ChatModeToggle';
 import { KeyRound, Terminal, Info, Database } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import type { MessageAttachment } from '../../types/chat';
@@ -53,32 +54,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
         </div>
 
         {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Centered in page) */}
-        <div className="justify-self-center flex items-center bg-[#101013] border border-[#24242A] rounded-full p-1.5 shadow-inner">
-          <button
-            type="button"
-            onClick={() => setActiveChatTab('chat')}
-            className={`px-5 sm:px-7 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-semibold transition-all cursor-pointer ${
-              activeChatTab === 'chat'
-                ? 'bg-[#1E1E24] text-white border border-[#303038] shadow-sm'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveChatTab('dual');
-              showNotification('Dual chat mode selected (waiting for functionality setup)');
-            }}
-            className={`px-5 sm:px-7 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-semibold transition-all cursor-pointer ${
-              activeChatTab === 'dual'
-                ? 'bg-[#1E1E24] text-white border border-[#303038] shadow-sm'
-                : 'text-neutral-400 hover:text-neutral-200'
-            }`}
-          >
-            Dual
-          </button>
+        <div className="justify-self-center">
+          <ChatModeToggle />
         </div>
 
         {/* Top-Right: Add API Key, Stored Keys & About Actions */}
