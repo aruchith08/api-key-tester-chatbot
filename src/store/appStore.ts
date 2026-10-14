@@ -67,6 +67,8 @@ interface AppState {
   isAgentMode: boolean;
   
   // UI States
+  activeChatTab: 'chat' | 'dual';
+  setActiveChatTab: (tab: 'chat' | 'dual') => void;
   isApiKeyModalOpen: boolean;
   isModelSelectorOpen: boolean;
   isDeveloperModeOpen: boolean;
@@ -145,6 +147,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   abortController: null,
   isAgentMode: true,
   
+  activeChatTab: 'chat',
+  setActiveChatTab: (activeChatTab) => set({ activeChatTab }),
   storedKeys: ApiKeyStorage.getAll(),
   isKeyVaultOpen: false,
   isApiKeyModalOpen: false,

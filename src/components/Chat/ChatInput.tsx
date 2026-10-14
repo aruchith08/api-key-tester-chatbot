@@ -71,7 +71,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 180)}px`;
     }
   }, [text]);
 
@@ -146,25 +146,27 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   };
 
   const hasText = text.trim().length > 0 || attachments.length > 0;
-  const isConnected = Boolean(apiKey);
+  const isMultiLine = text.includes('\n') || text.length > 80;
 
   return (
-    <div className={`w-full max-w-[760px] mx-auto transition-all duration-300 ${compact ? 'px-4' : 'px-4 sm:px-6'}`}>
+    <div className={`w-full max-w-[800px] mx-auto transition-all duration-300 ${compact ? 'px-2' : 'px-3 sm:px-4'}`}>
       <div 
-        className={`relative bg-[#121214] border border-[#232326] hover:border-[#2C2C30] focus-within:border-[#38383E] focus-within:ring-1 focus-within:ring-white/5 rounded-2xl shadow-xl shadow-black/40 transition-all duration-200 ${
-          compact ? 'py-2.5 px-3.5' : 'py-3.5 px-4 sm:px-5'
+        className={`relative bg-[#101013] border border-[#232328] hover:border-[#2D2D34] focus-within:border-[#383842] focus-within:ring-1 focus-within:ring-white/5 transition-all duration-200 shadow-2xl shadow-black/60 ${
+          isMultiLine || attachments.length > 0 || isListening
+            ? 'rounded-2xl py-2.5 px-3 sm:px-4'
+            : 'rounded-full py-1.5 px-2.5 sm:px-3.5'
         }`}
       >
-        {/* Top attachment previews */}
+        {/* Top attachment previews if any */}
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2.5 pb-2.5 border-b border-[#1C1C1F]">
+          <div className="flex flex-wrap gap-2 mb-2 pb-2 border-b border-[#1C1C20]">
             {attachments.map((att, idx) => (
               <div 
                 key={idx} 
-                className="relative group flex items-center gap-2 bg-[#1A1A1E] border border-[#26262B] rounded-lg px-2.5 py-1.5 text-xs text-neutral-300"
+                className="relative group flex items-center gap-2 bg-[#17171B] border border-[#26262B] rounded-lg px-2.5 py-1 text-xs text-neutral-300"
               >
                 {att.type === 'image' ? (
-                  <img src={att.url} alt={att.name} className="w-5 h-5 rounded object-cover" />
+                  <img src={att.url} alt={att.name} className="w-4 h-4 rounded object-cover" />
                 ) : (
                   <Paperclip className="w-3.5 h-3.5 text-neutral-400" />
                 )}
@@ -172,66 +174,36 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                 <button
                   type="button"
                   onClick={() => removeAttachment(idx)}
-                  className="text-neutral-500 hover:text-neutral-200 ml-1"
+                  className="text-neutral-500 hover:text-neutral-200 ml-1 cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Voice listening status indicator */}
+        {/* Voice listening status indicator if active */}
         {isListening && (
-          <div className="flex items-center gap-2 mb-2.5 py-1 px-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 animate-pulse">
+          <div className="flex items-center gap-2 mb-2 py-1 px-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-red-400 animate-ping shrink-0" />
-            <span className="font-medium">Listening... speak into your microphone (click mic to stop)</span>
+            <span className="font-medium">Listening... speak into your microphone (click mic to finish)</span>
           </div>
         )}
 
-        {/* Input Text Area Row */}
-        <div className="flex items-start justify-between gap-3">
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening... speak now" : "How can I help you today?"}
-            rows={1}
-            className="w-full bg-transparent text-[#EDEDED] placeholder-[#5A5A62] text-sm sm:text-base resize-none outline-none leading-relaxed min-h-[28px] max-h-[200px]"
-            style={{ scrollbarWidth: 'none' }}
-          />
-
-          {/* Quick status pill / green indicator on top right */}
-          <div className="flex items-center shrink-0 pt-0.5">
-            <button
-              type="button"
-              onClick={() => setApiKeyModalOpen(true)}
-              title={isConnected ? `Connected: ${selectedProvider?.name || 'Custom'}` : 'Connect API Key'}
-              className={`flex items-center justify-center w-6 h-6 rounded-full transition-all ${
-                isConnected 
-                  ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 ring-1 ring-emerald-500/40' 
-                  : 'bg-[#1C1C20] text-neutral-500 hover:text-neutral-300 hover:bg-[#25252A]'
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-500'}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Bottom Controls Bar */}
-        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#1C1C1F]/60">
+        {/* Unified Pill Row: Plus Button + Input Textarea + Mic + Model + Send */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Left: Attachment + Button */}
-          <div ref={attachmentMenuRef} className="relative flex items-center">
+          <div ref={attachmentMenuRef} className="relative shrink-0">
             <button
               type="button"
               onClick={() => setIsAttachmentOpen(!isAttachmentOpen)}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors cursor-pointer ${
                 isAttachmentOpen 
                   ? 'text-white bg-white/10' 
                   : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
               }`}
-              title="Add attachment"
+              title="Add attachment or toggle agent mode"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -247,7 +219,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
             <input 
               ref={fileInputRef} 
               type="file" 
-              accept=".txt,.md,.json,.pdf,.csv" 
+              accept=".txt,.md,.json,.pdf,.csv,.py,.js,.ts" 
               className="hidden" 
               onChange={(e) => handleFileUpload(e, 'file')} 
             />
@@ -255,7 +227,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
             {/* Attachment dropdown popover */}
             {isAttachmentOpen && (
               <div 
-                className="absolute bottom-full left-0 mb-2 w-48 bg-[#18181B] border border-[#2A2A2E] rounded-xl shadow-2xl py-1.5 z-50 backdrop-blur-md animate-fade-in"
+                className="absolute bottom-full left-0 mb-2 w-52 bg-[#18181B] border border-[#2A2A2E] rounded-xl shadow-2xl py-1.5 z-50 backdrop-blur-md animate-fade-in"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
@@ -264,7 +236,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                     imageInputRef.current?.click();
                     setIsAttachmentOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 transition-colors text-left cursor-pointer"
                 >
                   <ImageIcon className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Upload Image</span>
@@ -275,52 +247,63 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                     fileInputRef.current?.click();
                     setIsAttachmentOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 transition-colors text-left cursor-pointer"
                 >
                   <Paperclip className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Upload File</span>
                 </button>
+                <div className="h-px bg-[#26262B] my-1" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isAgentMode;
+                    setAgentMode(next);
+                    showNotification(next ? '🤖 Agent Mode enabled' : '💬 Direct Mode enabled');
+                    setIsAttachmentOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs text-neutral-300 hover:text-white hover:bg-white/5 transition-colors text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Bot className={`w-3.5 h-3.5 ${isAgentMode ? 'text-emerald-400' : 'text-neutral-400'}`} />
+                    <span>Agent Mode</span>
+                  </div>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isAgentMode ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-600'}`} />
+                </button>
               </div>
             )}
-
-            {/* Agent Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isAgentMode;
-                setAgentMode(next);
-                showNotification(next ? '🤖 Agent Mode enabled: In-flight tool calling & sandbox loop active' : '💬 Direct Mode enabled: Standard response generation');
-              }}
-              className={`ml-1 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-                isAgentMode
-                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-xs'
-                  : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-transparent'
-              }`}
-              title={isAgentMode ? "Agent Mode: ON (Autonomous tool calling loop enabled)" : "Agent Mode: OFF (Click to enable)"}
-            >
-              <Bot className={`w-3.5 h-3.5 ${isAgentMode ? 'text-emerald-400' : 'text-neutral-500'}`} />
-              <span className="hidden sm:inline">Agent Mode</span>
-              <span className={`w-1.5 h-1.5 rounded-full ${isAgentMode ? 'bg-emerald-400 animate-pulse' : 'bg-neutral-600'}`} />
-            </button>
           </div>
 
-          {/* Right Controls: Mic + Model Indicator + Send */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Microphone with Tooltip & State */}
+          {/* Center: Input Text Area */}
+          <div className="flex-1 flex items-center min-w-0">
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={isListening ? "Listening... speak now" : "How can I help you today?"}
+              rows={1}
+              className="w-full bg-transparent text-[#EDEDED] placeholder-[#5A5A64] text-xs sm:text-sm md:text-base resize-none outline-none leading-relaxed py-1 px-1 max-h-[180px]"
+              style={{ scrollbarWidth: 'none' }}
+            />
+          </div>
+
+          {/* Right Controls: Microphone, Model Dropdown Pill, and Submit Button */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Microphone Button */}
             <button
               type="button"
               onClick={handleMicClick}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all cursor-pointer ${
                 isListening
                   ? 'text-red-400 bg-red-500/20 ring-1 ring-red-500/50 hover:bg-red-500/30 animate-pulse'
                   : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
               }`}
               title={isListening ? "Listening... Click to stop" : "Voice Input (Speech-to-Text)"}
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening ? <MicOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
             </button>
 
-            {/* Active Model Indicator */}
+            {/* Model Indicator & Dropdown Pill */}
             <button
               type="button"
               onClick={() => {
@@ -330,32 +313,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                   setModelSelectorOpen(true);
                 }
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-[#18181C] hover:bg-[#202026] border border-[#26262B] rounded-lg text-xs text-neutral-300 transition-colors max-w-[160px] sm:max-w-[220px]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#16161A] hover:bg-[#1E1E24] border border-[#25252B] hover:border-[#35353D] rounded-full text-xs font-medium text-neutral-300 hover:text-white transition-all cursor-pointer max-w-[120px] sm:max-w-[200px]"
               title={selectedModel ? `Model: ${selectedModel.name || selectedModel.id}` : 'Select Model'}
             >
               <Zap className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span className="truncate font-medium">
+              <span className="truncate">
                 {selectedModel ? selectedModel.name || selectedModel.id : 'No Model'}
               </span>
               <ChevronDown className="w-3 h-3 text-neutral-500 shrink-0" />
             </button>
 
-            {/* Send Button */}
+            {/* Send / Stop Button */}
             <button
               type="button"
               onClick={handleSubmit}
               disabled={!hasText && !isGenerating}
-              className={`p-1.5 sm:p-2 rounded-full transition-all flex items-center justify-center ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full transition-all cursor-pointer ${
                 isGenerating
                   ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 ring-1 ring-red-500/50'
                   : hasText
-                    ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-md shadow-emerald-950'
-                    : 'bg-[#1C1C20] text-neutral-600 cursor-not-allowed'
+                    ? 'bg-neutral-100 text-black hover:bg-white shadow-md shadow-white/5 cursor-pointer'
+                    : 'bg-[#18181C] text-neutral-600 border border-[#242429] cursor-not-allowed'
               }`}
               title={isGenerating ? 'Stop Generation' : 'Send message'}
             >
               {isGenerating ? (
-                <span className="w-3 h-3 rounded-xs bg-red-400" />
+                <span className="w-2.5 h-2.5 rounded-xs bg-red-400" />
               ) : (
                 <ArrowUp className="w-4 h-4" />
               )}

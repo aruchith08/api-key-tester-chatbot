@@ -4,9 +4,9 @@ export const Greeting: React.FC = () => {
   const greetingText = useMemo(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
-      return 'Good morning, how are things?';
+      return 'Morning, how are things?';
     } else if (hour >= 12 && hour < 18) {
-      return 'Good afternoon, how are things?';
+      return 'Afternoon, how are things?';
     } else {
       return 'Evening, how are things?';
     }

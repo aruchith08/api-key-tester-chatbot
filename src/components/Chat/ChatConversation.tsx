@@ -25,7 +25,10 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
     setAboutModalOpen,
     setKeyVaultOpen,
     storedKeys,
-    clearChat
+    clearChat,
+    activeChatTab,
+    setActiveChatTab,
+    showNotification
   } = useAppStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -63,63 +66,93 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   return (
     <div className="flex flex-col h-screen w-full bg-[#09090A] text-[#EDEDED] select-none overflow-hidden">
       {/* Top Conversation Header */}
-      <header className="shrink-0 flex items-center justify-between px-4 sm:px-8 py-3 border-b border-[#1C1C1F] bg-[#09090A]/90 backdrop-blur-md z-20">
-        {/* Left: Brand logo & Active Model */}
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-20 gap-2">
+        {/* Left: Brand logo & Subtitle */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={clearChat}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
             title="Return to Home"
           >
-            <ARHLogo size="sm" className="w-16" />
+            <ARHLogo size="xs" />
+            <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100 hidden sm:inline">ARH</span>
           </button>
 
-          <div className="h-4 w-px bg-neutral-800 hidden sm:block" />
+          <div className="h-4 w-px bg-neutral-800 hidden md:block" />
 
-          {/* Model pill */}
+          {/* Active Model pill */}
           <button
             type="button"
             onClick={() => setModelSelectorOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#141416] hover:bg-[#1A1A1E] border border-[#242428] rounded-xl text-xs text-neutral-300 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#141416] hover:bg-[#1A1A1E] border border-[#242428] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
           >
-            <Zap className="w-3 h-3 text-emerald-400" />
-            <span className="font-medium truncate max-w-[140px] sm:max-w-[200px]">
+            <Zap className="w-3 h-3 text-emerald-400 shrink-0" />
+            <span className="font-medium truncate max-w-[120px] sm:max-w-[180px]">
               {selectedModel?.name || selectedModel?.id || 'No Model'}
             </span>
           </button>
         </div>
 
-        {/* Right Actions: Clear Chat, Regenerate, Dev Mode */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Center: Segmented Pill Switcher [ Chat | Dual ] */}
+        <div className="flex items-center bg-[#101013] border border-[#232328] rounded-full p-1 shadow-inner">
+          <button
+            type="button"
+            onClick={() => setActiveChatTab('chat')}
+            className={`px-3.5 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeChatTab === 'chat'
+                ? 'bg-[#1D1D22] text-white border border-[#2E2E36] shadow-sm'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveChatTab('dual');
+              showNotification('Dual chat mode selected (waiting for functionality setup)');
+            }}
+            className={`px-3.5 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+              activeChatTab === 'dual'
+                ? 'bg-[#1D1D22] text-white border border-[#2E2E36] shadow-sm'
+                : 'text-neutral-400 hover:text-neutral-200'
+            }`}
+          >
+            Dual
+          </button>
+        </div>
+
+        {/* Right Actions: Regenerate, Clear, Keys, About, Dev Mode */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Regenerate */}
           <button
             type="button"
             onClick={onRegenerate}
             disabled={isGenerating || messages.length === 0}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 hover:bg-white/5 rounded-xl transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 hover:bg-white/5 rounded-xl transition-colors disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer"
             title="Regenerate latest AI response"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Regenerate</span>
+            <span className="hidden lg:inline">Regenerate</span>
           </button>
 
           {/* Clear Chat */}
           <button
             type="button"
             onClick={clearChat}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
             title="Clear temporary session"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clear</span>
+            <span className="hidden lg:inline">Clear</span>
           </button>
 
           {/* Stored Keys Vault */}
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
             title="Switch or manage stored API keys"
           >
             <Database className="w-3.5 h-3.5 text-emerald-400" />
@@ -144,11 +177,11 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           <button
             type="button"
             onClick={() => setDeveloperModeOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
             title="Developer Mode"
           >
             <Terminal className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden sm:inline">Dev Mode</span>
+            <span className="hidden md:inline">Dev Mode</span>
           </button>
         </div>
       </header>
