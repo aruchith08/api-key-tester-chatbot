@@ -2,7 +2,7 @@ import React from 'react';
 import { ARHLogo } from './ARHLogo';
 import { Greeting } from './Greeting';
 import { ChatInput } from '../Chat/ChatInput';
-import { KeyRound, Sparkles, Terminal, Info, Database } from 'lucide-react';
+import { KeyRound, Sparkles, Terminal, Info, Database, Columns2 } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import type { MessageAttachment } from '../../types/chat';
 
@@ -62,8 +62,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           </button>
         </div>
 
-        {/* Top-Right: About & Developer Mode Triggers */}
+        {/* Top-Right: Dual Chat, About & Developer Mode Triggers */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141416]/70 hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs transition-all cursor-pointer"
+            title="Dual Chat"
+          >
+            <Columns2 className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="inline">Dual chat</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
