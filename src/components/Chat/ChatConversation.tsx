@@ -66,9 +66,9 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   return (
     <div className="flex flex-col h-screen w-full bg-[#09090A] text-[#EDEDED] select-none overflow-hidden">
       {/* Top Conversation Header */}
-      <header className="shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-20 gap-2">
+      <header className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-20 gap-2">
         {/* Left: Brand logo & Subtitle */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={clearChat}
@@ -94,14 +94,14 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           </button>
         </div>
 
-        {/* Center: Segmented Pill Switcher [ Chat | Dual ] */}
-        <div className="flex items-center bg-[#101013] border border-[#232328] rounded-full p-1 shadow-inner">
+        {/* Center: Segmented Pill Switcher [ Chat | Dual ] (Centered in page) */}
+        <div className="justify-self-center flex items-center bg-[#101013] border border-[#24242A] rounded-full p-1.5 shadow-inner">
           <button
             type="button"
             onClick={() => setActiveChatTab('chat')}
-            className={`px-3.5 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+            className={`px-5 sm:px-7 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-semibold transition-all cursor-pointer ${
               activeChatTab === 'chat'
-                ? 'bg-[#1D1D22] text-white border border-[#2E2E36] shadow-sm'
+                ? 'bg-[#1E1E24] text-white border border-[#303038] shadow-sm'
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -113,9 +113,9 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
               setActiveChatTab('dual');
               showNotification('Dual chat mode selected (waiting for functionality setup)');
             }}
-            className={`px-3.5 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
+            className={`px-5 sm:px-7 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-semibold transition-all cursor-pointer ${
               activeChatTab === 'dual'
-                ? 'bg-[#1D1D22] text-white border border-[#2E2E36] shadow-sm'
+                ? 'bg-[#1E1E24] text-white border border-[#303038] shadow-sm'
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -124,7 +124,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
         </div>
 
         {/* Right Actions: Regenerate, Clear, Keys, About, Dev Mode */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="justify-self-end flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Regenerate */}
           <button
             type="button"
