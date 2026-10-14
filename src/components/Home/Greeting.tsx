@@ -13,7 +13,7 @@ export const Greeting: React.FC = () => {
   }, []);
 
   return (
-    <h1 className="font-editorial text-3xl sm:text-4xl md:text-5xl font-normal text-neutral-100 tracking-wide text-center select-none antialiased">
+    <h1 className="font-editorial text-3xl sm:text-4xl md:text-[44px] font-normal text-white tracking-normal text-center select-none antialiased leading-tight">
       {greetingText}
     </h1>
   );

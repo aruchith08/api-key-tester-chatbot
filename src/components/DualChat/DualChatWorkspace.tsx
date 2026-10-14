@@ -7,7 +7,7 @@ import { DualMessageComparison } from './DualMessageComparison';
 import { DualModelModal } from './DualModelModal';
 import { ChatInput } from '../Chat/ChatInput';
 import { useDualChat } from '../../hooks/useDualChat';
-import { KeyRound, Database, Info, Terminal, Trash2, RotateCcw, Sparkles } from 'lucide-react';
+import { Atom, KeyRound, Database, Info, Terminal, Trash2, RotateCcw, Sparkles } from 'lucide-react';
 import type { MessageAttachment } from '../../types/chat';
 
 export const DualChatWorkspace: React.FC = () => {
@@ -60,7 +60,7 @@ export const DualChatWorkspace: React.FC = () => {
             onClick={() => window.location.reload()}
             title="ARH Playground"
           >
-            <ARHLogo size="xs" />
+            <Atom className="w-5 h-5 text-white stroke-[1.6]" />
             <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100 hidden sm:inline">
               ARH
             </span>

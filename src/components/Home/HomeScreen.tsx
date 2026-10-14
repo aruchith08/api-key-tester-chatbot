@@ -3,7 +3,7 @@ import { ARHLogo } from './ARHLogo';
 import { Greeting } from './Greeting';
 import { ChatInput } from '../Chat/ChatInput';
 import { ChatModeToggle } from '../Navigation/ChatModeToggle';
-import { KeyRound, Terminal, Info, Database } from 'lucide-react';
+import { Atom, KeyRound, Terminal, Info, Database } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import type { MessageAttachment } from '../../types/chat';
 
@@ -38,14 +38,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       {/* Top Header Bar */}
       <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-7xl mx-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="justify-self-start flex items-center gap-3 shrink-0">
           <div 
             className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
             title="ARH"
           >
-            <ARHLogo size="xs" />
-            <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100">ARH</span>
+            <Atom className="w-6 h-6 text-white stroke-[1.6]" />
+            <span className="font-semibold tracking-wider text-base text-neutral-100">ARH</span>
           </div>
           <div className="h-4 w-px bg-neutral-800" aria-hidden="true" />
           <span className="text-xs sm:text-sm text-neutral-400 font-normal tracking-wide hidden xs:inline">
@@ -59,12 +59,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
         </div>
 
         {/* Top-Right: Add API Key, Stored Keys & About Actions */}
-        <div className="justify-self-end flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="justify-self-end flex items-center gap-2 shrink-0">
           {/* Add API Key */}
           <button
             type="button"
             onClick={() => setApiKeyModalOpen(true)}
-            className="group flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
+            className="group flex items-center gap-2 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
             title={isConnected ? `Connected: ${selectedProvider?.name || 'API Key Connected'}` : 'Connect API Key'}
           >
             <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
@@ -79,12 +79,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
+            className="group flex items-center gap-2 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
             title="Open Stored API Keys Vault"
           >
             <Database className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden md:inline">Stored Keys</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700">
               {storedKeys.length}
             </span>
           </button>
@@ -93,7 +93,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all cursor-pointer"
             title="About ARH Application"
           >
             <Info className="w-3.5 h-3.5 text-neutral-400" />

@@ -4,7 +4,7 @@ import { ChatMessageItem } from './ChatMessageItem';
 import { ChatInput } from './ChatInput';
 import { ARHLogo } from '../Home/ARHLogo';
 import { ChatModeToggle } from '../Navigation/ChatModeToggle';
-import { RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info, Database } from 'lucide-react';
+import { Atom, RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info, Database } from 'lucide-react';
 import type { MessageAttachment } from '../../types/chat';
 
 interface ChatConversationProps {
@@ -76,7 +76,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
             title="Return to Home"
           >
-            <ARHLogo size="xs" />
+            <Atom className="w-5 h-5 text-white stroke-[1.6]" />
             <span className="font-semibold tracking-wider text-sm sm:text-base text-neutral-100 hidden sm:inline">ARH</span>
           </button>
 
