@@ -1,10 +1,10 @@
 <div align="center">
 
-# ⚡ ARH — AI API Testing Ground & Agent Sandbox
+# ⚡ ARH — AI API Testing Ground, Dual Arena & Agent Sandbox
 
-**A minimalist, universal, stateless playground and autonomous execution environment to test, validate, and chat with 22+ AI providers instantly.**
+**A minimalist, universal, stateless playground, dual-AI benchmarking arena, and autonomous execution environment to test, validate, and chat with 22+ AI providers instantly.**
 
-[![Tests](https://img.shields.io/badge/tests-359%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
+[![Tests](https://img.shields.io/badge/tests-1%2C218%20passed-emerald?style=flat-square)](https://github.com/aruchith08/api-key-tester-chatbot)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-cyan?style=flat-square&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-purple?style=flat-square&logo=vite)](https://vitejs.dev/)
@@ -27,26 +27,55 @@
 
 Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, OpenRouter, Together, Fireworks, Perplexity, Cerebras, Token Router, BazaarLink, NRouter, Experiential Labs, Mistral, Cohere, xAI, Hugging Face, or Ollama** — ARH instantly detects the provider, validates credentials, discovers live models, and launches a real-time streaming chat session with autonomous code execution and file previews.
 
+With **ARH 2.0**, you can switch into the **Dual AI Workspace** to pit two models against each other side-by-side or watch them converse autonomously in a WhatsApp-style messenger interface with directional send actions and an encrypted client-side Key Vault.
+
 ---
 
 ## 🚀 Key Capabilities & Features
 
-### 1. 🔍 Instant Key Pattern Detection
+### 1. ⚔️ Dual AI Workspace & Side-by-Side Arena
+- **Sliding Capsule Switcher**: Smooth animated toggle between Single Chat (`/`) and Dual AI Workspace (`/dual`) with non-destructive state preservation.
+- **Two Independent AI Slots**: AI 1 (Blue) and AI 2 (Pink) maintain isolated providers, API keys, models, system instructions, and temperature parameters.
+- **Three-Way Directed Composer**:
+  - `◀ Left Arrow (Blue)`: Send to AI 1 only.
+  - `▲ Up Arrow (Purple)`: Broadcast to both AIs simultaneously with concurrent, non-blocking streaming.
+  - `▶ Right Arrow (Pink)`: Send to AI 2 only.
+- **WhatsApp / Messenger-Style UI**:
+  - Left-aligned AI 1 chat bubbles (`mr-auto`, blue glow and dark slate background).
+  - Right-aligned AI 2 chat bubbles (`ml-auto`, pink glow and dark plum background).
+  - Centered moderator/user instructions with targeted badges (`To Both AIs`, `To AI 1`, `To AI 2`).
+- **Autonomous AI-to-AI Conversation Engine**:
+  - Automatically prompts AI 1 to kick off the conversation.
+  - Alternates turns automatically (AI 1's response feeds as context to AI 2, and vice-versa).
+  - Full playback controls: Start, Pause, Resume, Stop, and configurable Turn Limit (default 10 turns).
+- **Dynamic Model Discovery per Slot**:
+  - Queries live `/models` endpoints dynamically for each slot.
+  - Dynamic capability filter tabs (`Chat`, `Vision`, `Reasoning`, `Free Models`, `Embeddings`, `Audio`, `All Models`).
+  - Live API cache invalidation and Refresh button.
+  - Custom Model ID entry to benchmark private or unlisted fine-tuned models.
+
+### 2. 🔐 Client-Side API Key Vault & Storage Manager
+- **Storage Target Flexibility**: Choose between ephemeral session storage (`sessionStorage`) or persistent local storage (`localStorage`).
+- **1-Click Quick Connect**: Rapidly attach saved keys to Single Chat, AI 1, or AI 2 without retyping.
+- **Masked Credential Security**: Visual masking protects keys against shoulder-surfing (`gsk_...7890`).
+- **Portable Backups**: Export and import encrypted JSON backups of your saved key profiles.
+
+### 3. 🔍 Instant Key Pattern Detection
 - Heuristic regex engine identifies distinct key signatures in real-time as you type or paste (`xpl_` for Experiential Labs, `gsk_` for Groq, `nvapi-` for NVIDIA NIM, `AIzaSy` for Google Gemini, `sk-ant-` for Anthropic, `sk-or-` for OpenRouter, `sk-proj-` for OpenAI, etc.).
 - Categorizes confidence levels (`high`, `medium`, `low`) with transparent rationale and multi-candidate manual selection for ambiguous keys.
 
-### 2. 🤖 Autonomous Agent Mode (In-Flight Tool Calling Loop)
+### 4. 🤖 Autonomous Agent Mode (In-Flight Tool Calling Loop)
 - **True Agentic Harness**: Models that support function/tool calling (OpenAI GPT-4o, Groq LLaMA 3.3/3.1, Claude 3.5, Gemini 1.5/2.0) are equipped with the `execute_python` tool.
 - **ReAct Execution Loop**: The model emits a tool call, the app pauses generation, executes the script in the client-side Pyodide sandbox, extracts any generated files, feeds the results (`stdout`, `stderr`, file list) back into the conversation context with `{ role: 'tool' }`, and prompts the model to verify its output before writing the final response.
 - **Fail-Safe Fallback**: If a provider or custom endpoint does not support tool schemas, ARH automatically falls back to direct chat mode with post-generation detection.
 
-### 3. 🐍 Client-Side WebAssembly Python Sandbox (Pyodide)
+### 5. 🐍 Client-Side WebAssembly Python Sandbox (Pyodide)
 - Runs Python 3 inside an isolated browser Web Worker powered by WebAssembly (Wasm) and an in-memory virtual filesystem (MEMFS).
 - **Preloaded Document & Data Libraries**: Supports `python-docx` (`docx`), `openpyxl`, `pandas`, `matplotlib`, `reportlab`, `pydantic`, and `sympy`.
 - **Autonomous File Extraction**: When scripts call `doc.save('report.docx')`, `wb.save('data.xlsx')`, `plt.savefig('chart.png')`, or `open('data.csv', 'w')`, generated binary files are automatically extracted into browser Blob URLs with download cards.
 - **Manual Execution**: Every code block features an interactive "Run in Sandbox" button with live status pills and logs drawers.
 
-### 4. 📂 Right-Side In-Browser File Preview Drawer ("Sider")
+### 6. 📂 Right-Side In-Browser File Preview Drawer ("Sider")
 - Slide-over drawer on the right side of the screen for instant, zero-software previewing of chat artifacts:
   - 📄 **PDFs (`.pdf`)**: Native embedded browser PDF reader with zoom, search, and page navigation.
   - 📝 **Word Documents (`.docx`, `.doc`)**: Lazy-loaded Mammoth.js engine rendering styled paper document layouts with headings, styled tables, lists, and images.
@@ -56,24 +85,24 @@ Paste an API key from **Groq, OpenAI, Anthropic, Gemini, NVIDIA NIM, DeepSeek, O
   - 💻 **Code & Text (`.txt`, `.md`, `.json`, `.py`, `.sql`)**: Syntax-highlighted text reader with line numbers and 1-click copy.
   - **Fullscreen Toggle**: Expand the preview drawer across the full viewport with one click.
 
-### 5. 🧠 Reasoning & Thinking Model Support
+### 7. 🧠 Reasoning & Thinking Model Support
 - Separate visual thinking drawers for reasoning models (DeepSeek-R1, Cerebras, Nemotron, OpenAI o1/o3-mini).
 - Automatically parses `<think>` XML blocks or separate SSE reasoning streams (`delta.reasoning_content`) with collapsible accordion display and duration metrics.
 
-### 6. 🎙️ Voice Input (Speech-to-Text)
+### 8. 🎙️ Voice Input (Speech-to-Text)
 - Integrated Web Speech API microphone input with real-time audio pulsing indicators and automatic punctuation.
 
-### 7. 🛡️ Zero-Persistence Ephemeral Security
-- **No databases. No localStorage. No telemetry. No server logs.**
-- Your API key and conversation history live strictly in runtime memory.
-- Closing or refreshing the tab completely wipes all credentials from existence.
+### 9. 🛡️ Zero-Persistence Ephemeral Security
+- **No databases. No telemetry. No server logs.**
+- Your API key and conversation history live strictly in runtime memory by default.
+- Closing or refreshing the tab completely wipes all credentials from existence unless saved to the opt-in client-side Key Vault.
 - Automatic key masking (`sk-proj-...1a2b`) protects your screen from shoulder-surfing.
 
-### 8. 🌐 Adaptive Connection Architecture
+### 10. 🌐 Adaptive Connection Architecture
 - **Direct Browser Transport**: For providers with open CORS (Groq, OpenRouter, Hugging Face, Together), requests stream directly from your browser to the provider’s endpoint.
 - **Stateless Proxy Fallback**: For enterprise APIs that restrict browser CORS (NVIDIA NIM and OpenAI), ARH routes requests through a lightweight, stateless proxy (built into Vite for local dev and Vercel Edge Functions for production).
 
-### 9. 🔍 Developer Mode & Inspector
+### 11. 🔍 Developer Mode & Inspector
 - Dedicated **`>_ Dev Mode`** drawer.
 - Inspect raw HTTP requests, sanitized headers (secrets masked), response bodies, status codes, and latency breakdowns for every call.
 
@@ -117,7 +146,7 @@ ARH features full native integration with **NVIDIA Build** (`https://build.nvidi
 - **Dynamic Model Discovery**: `GET https://integrate.api.nvidia.com/v1/models` queries all available live models at runtime.
 - **Chat Endpoint**: `POST https://integrate.api.nvidia.com/v1/chat/completions`
 - **Authentication**: `Authorization: Bearer nvapi-...`
-- **Authoritative Model IDs**: Model IDs are strictly preserved from the NVIDIA API response (e.g. `openai/gpt-oss-20b`, `meta/muse-glimmer-30b`, `meta/llama-3.2-90b-vision-instruct`, `nvidia/nemotron-3-super-120b-a12b`). Model IDs are never artificially prefixed with `nvidia/` or fabricated.
+- **Authoritative Model IDs**: Model IDs are strictly preserved from the NVIDIA API response (e.g. `openai/gpt-oss-20b`, `meta/llama-3.3-70b-instruct`, `meta/llama-3.2-90b-vision-instruct`, `nvidia/nemotron-3-super-120b-a12b`). Model IDs are never artificially prefixed or altered.
 - **Model Capability Classification**: Models are categorized across `chat`, `vision`, `reasoning`, `embedding`, `audio`, `translation`, `safety`, `autonomous-driving`, and `optimization`.
 - **Chat Filtered Selector**: The primary chat model selector exposes only chat-capable models, with category tabs (`Chat`, `Vision`, `Reasoning`, `Embeddings`, `Audio`, `Translation`, `Safety`, `All`) and live dynamic refresh.
 - **Rate Limit & Error Handling**: Gracefully maps HTTP 401/403, 404 (with exact model ID), and 429 ("NVIDIA Free Endpoint rate limit reached. Please wait and try again.").
@@ -132,32 +161,42 @@ ARH features full native integration with **NVIDIA Build** (`https://build.nvidi
                            │       ARH Web UI       │
                            └───────────┬────────────┘
                                        │
-                                Paste API Key
+                      ┌────────────────┴────────────────┐
+                      │ Capsule Mode: [ Chat | Dual ]   │
+                      └────────────────┬────────────────┘
                                        │
-                                       ▼
-                       ┌────────────────────────────────┐
-                       │    Provider Detection Engine   │
-                       │ (Heuristics, RegEx, Rationale) │
-                       └───────────────┬────────────────┘
-                                       │
-                                       ▼
-                      ┌──────────────────────────────────┐
-                      │   Connection Strategy Resolver   │
-                      └────────┬───────────────────┬─────┘
-                               │                   │
-                     CORS Supported         CORS Restricted
-                               │                   │
-                               ▼                   ▼
-                     ┌──────────────────┐  ┌──────────────────┐
-                     │ Direct Transport │  │  Stateless Proxy │
-                     │  (Browser Fetch) │  │ (Vite / Vercel)  │
-                     └────────┬─────────┘  └────────┬─────────┘
-                              │                     │
-                              ▼                     ▼
-                     ┌──────────────────────────────────┐
-                     │         AI Provider API          │
-                     │  (Groq, OpenAI, Anthropic, NIM)  │
-                     └─────────────────┬────────────────┘
+                ┌──────────────────────┴──────────────────────┐
+                │                                             │
+         Single AI Chat                                Dual AI Workspace
+                │                                             │
+      ┌─────────┴─────────┐                         ┌─────────┴─────────┐
+      │  Single Key Auth  │                         │ AI 1 (Blue Slot)  │
+      │  & Model Catalog  │                         │ AI 2 (Pink Slot)  │
+      └─────────┬─────────┘                         │ Key Vault Connect │
+                │                                   └─────────┬─────────┘
+                │                                             │
+                │                                    3-Way Directional
+                │                                   Send Composer (◀ ▲ ▶)
+                │                                   or Auto Talk Engine
+                │                                             │
+                ▼                                             ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │                 Connection Strategy Resolver                │
+        └──────────────┬───────────────────────────────┬──────────────┘
+                       │                               │
+                CORS Supported                  CORS Restricted
+                       │                               │
+                       ▼                               ▼
+             ┌──────────────────┐            ┌──────────────────┐
+             │ Direct Transport │            │  Stateless Proxy │
+             │  (Browser Fetch) │            │ (Vite / Vercel)  │
+             └─────────┬────────┘            └─────────┬────────┘
+                       │                               │
+                       ▼                               ▼
+             ┌──────────────────────────────────────────────────┐
+             │                 AI Provider API                  │
+             │          (Groq, OpenAI, Anthropic, NIM)          │
+             └─────────────────────────┬────────────────────────┘
                                        │
                            Tool Call / Code Emitted
                                        │
@@ -204,7 +243,7 @@ Visit **`http://localhost:5173`** in your browser.
 
 ## 🧪 Automated Testing
 
-ARH includes an automated test suite comprising **186 unit, adapter, heuristic, sandbox, and normalization tests**:
+ARH includes a comprehensive automated test suite comprising **1,218 tests passing with 100% reliability**:
 
 ```bash
 # Run all automated test suites
@@ -222,6 +261,8 @@ npm test
 - **Transport & Strategy**: 21 tests validating connection mode determination and truth layers.
 - **Python Code Detection & Heuristics**: 15 tests verifying file-saving patterns across libraries.
 - **Autonomous Agent Tools & ReAct Harness**: 26 tests verifying tool schemas, argument parsers, multi-turn tool message formatting, streaming tool call aggregation, and preview drawer state management.
+- **DualChat Workspace & State Isolation**: Tests verifying strict slot independence, single-chat transcript preservation, non-destructive capsule switching, 3-way send targeting, independent slot error tolerance, and auto-chat turn alternation and pausing.
+- **API Key Storage & Key Vault**: Tests verifying localStorage vs sessionStorage targets, masked key generation, CRUD operations, and JSON backup export/import.
 - **Live Integration Testing**: Conditional test harnesses for environment variables.
 
 ---
@@ -253,10 +294,10 @@ vercel
 
 ## 🔒 Security & Privacy Statement
 
-- **Client-Side First**: Your API keys are kept entirely within your local browser memory.
+- **Client-Side First**: Your API keys are kept entirely within your local browser memory by default.
 - **Zero Backend Storage**: ARH does not have a database, user tracking, or third-party analytical cookies.
-- **Ephemeral Sessions**: Refreshing the browser or clearing the state destroys all active credentials and chat contents.
-- **Open Source**: All network requests and adapters are transparent and open for inspection in [`src/providers`](./src/providers) and [`src/sandbox`](./src/sandbox).
+- **Ephemeral Sessions**: Refreshing the browser or clearing the state destroys all active credentials and chat contents unless saved to the opt-in client-side Key Vault.
+- **Open Source**: All network requests, adapters, and sandboxes are transparent and open for inspection in [`src/providers`](./src/providers) and [`src/sandbox`](./src/sandbox).
 
 ---
 

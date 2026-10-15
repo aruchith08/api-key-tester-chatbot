@@ -20,7 +20,8 @@ import {
   Brain,
   FileCode,
   Layers,
-  Sparkles
+  Sparkles,
+  Database
 } from 'lucide-react';
 
 const GitHubIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
@@ -75,7 +76,10 @@ export const AboutModal: React.FC = () => {
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-semibold text-white tracking-tight">ARH</h2>
                 <span className="px-2 py-0.5 text-[10px] font-medium font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                  v1.2.0
+                  v2.0.0
+                </span>
+                <span className="px-2 py-0.5 text-[10px] font-mono text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full">
+                  Dual AI Arena
                 </span>
                 <span className="hidden sm:inline px-2 py-0.5 text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
                   Pyodide Wasm Sandbox
@@ -85,7 +89,7 @@ export const AboutModal: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Universal Stateless AI Playground, Autonomous Python Sandbox & File Previewer
+                Universal Stateless AI Testing Ground, Dual AI Workspace, Autonomous Python Sandbox & File Previewer
               </p>
             </div>
           </div>
@@ -175,15 +179,27 @@ export const AboutModal: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
-                  <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Zero-Persistence Security</span>
+                  <div className="flex items-center gap-2 text-purple-400 font-medium">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Dual AI Arena & Auto Conversations</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
-                    100% ephemeral in-memory storage. No databases, no localStorage, no cookies, and no tracking. Closing the browser tab permanently destroys all credentials.
+                    Benchmark two AIs side-by-side or run autonomous turn-based AI debates and collaborative discussions in a WhatsApp-style messenger layout with directional send controls.
                   </p>
                 </div>
 
+                <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
+                  <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Zero-Persistence Security & Key Vault</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 leading-normal">
+                    100% ephemeral in-memory storage by default, or opt into the encrypted client-side Key Vault for 1-click connection across single and dual chat slots.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
                   <div className="flex items-center gap-2 text-blue-400 font-medium">
                     <Zap className="w-4 h-4" />
@@ -203,7 +219,9 @@ export const AboutModal: React.FC = () => {
                     Client-side WebAssembly Python 3 worker with in-memory virtual filesystem (MEMFS) and automated binary file extraction (<code className="text-neutral-300">.docx</code>, <code className="text-neutral-300">.xlsx</code>, <code className="text-neutral-300">.pdf</code>, <code className="text-neutral-300">.png</code>).
                   </p>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
                   <div className="flex items-center gap-2 text-cyan-400 font-medium">
                     <Eye className="w-4 h-4" />
@@ -211,18 +229,6 @@ export const AboutModal: React.FC = () => {
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-normal">
                     Instant, zero-software previewing of chat artifacts: Word docs (Mammoth.js), Excel sheets with multi-sheet tabs (SheetJS), PDFs, interactive HTML iframes, and zoomable images.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-1.5">
-                  <div className="flex items-center gap-2 text-purple-400 font-medium">
-                    <Bot className="w-4 h-4" />
-                    <span>Autonomous ReAct Agent Loop</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 leading-normal">
-                    Models supporting function calling automatically run scripts via <code className="text-neutral-300">execute_python</code>, inspect execution outputs, and self-verify results before concluding.
                   </p>
                 </div>
 
@@ -242,6 +248,33 @@ export const AboutModal: React.FC = () => {
           {/* TAB 2: FEATURES */}
           {activeTab === 'features' && (
             <div className="space-y-3 animate-fade-in">
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-purple-400 font-medium">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="text-xs text-white">Dual AI Workspace & Autonomous Conversations</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Switch seamlessly between Single Chat and Dual AI Workspace using the top capsule switcher:
+                </p>
+                <ul className="text-[11px] text-neutral-400 space-y-1 list-disc pl-4">
+                  <li><strong className="text-neutral-200">Independent Slots</strong>: AI 1 (Blue) and AI 2 (Pink) maintain separate providers, API keys, models, system instructions, and temperatures.</li>
+                  <li><strong className="text-neutral-200">Three-Way Directed Composer</strong>: Send directly to AI 1 (◀), broadcast to both simultaneously with concurrent streams (▲), or send to AI 2 (▶).</li>
+                  <li><strong className="text-neutral-200">Auto AI-to-AI Talk</strong>: Automatic turn-based debate/collaboration engine with turn limit, pause, resume, and stop controls.</li>
+                  <li><strong className="text-neutral-200">WhatsApp-Style Messenger UI</strong>: Left-aligned incoming AI 1 chat bubbles, right-aligned outgoing AI 2 chat bubbles, and centered moderator prompts.</li>
+                  <li><strong className="text-neutral-200">Dynamic Model Discovery</strong>: Live model discovery per slot with category filters (Chat, Vision, Reasoning, Free), live refresh, and custom model ID entry.</li>
+                </ul>
+              </div>
+
+              <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-emerald-400 font-medium">
+                  <Database className="w-4 h-4" />
+                  <span className="text-xs text-white">Encrypted API Key Storage & Key Vault</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Store and manage credentials across 22+ providers locally with options for ephemeral session storage or persistent local storage. Features 1-click quick-connection into Single Chat or Dual slots, masked key displays, latency history, and portable JSON backup/restore.
+                </p>
+              </div>
+
               <div className="p-3 bg-[#151518] border border-[#232328] rounded-xl space-y-2">
                 <div className="flex items-center gap-2 text-emerald-400 font-medium">
                   <Cpu className="w-4 h-4" />
@@ -490,10 +523,10 @@ Right-Side Interactive File Previewer (PDF, Word, Excel, HTML, Images)`}</pre>
                 <p className="text-sm font-medium text-white">Testing & Reliability</p>
                 <div className="flex items-center gap-2 text-emerald-400 text-xs">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>210 Automated Tests Passing (100%)</span>
+                  <span>1,218 Automated Tests Passing (100%)</span>
                 </div>
                 <p className="text-[11px] text-neutral-400 leading-normal">
-                  Comprehensive test suites covering Provider Detection Heuristics, OpenAI / Gemini / Anthropic / Experiential Adapters, Error Normalization, SSE Stream & Thinking Parser, Transport Truth Model, Python Code Detector, and Autonomous ReAct Harness.
+                  Comprehensive test suites covering Provider Detection Heuristics, DualChat Workspace & State Isolation, Key Vault & Storage, Error Normalization, SSE Stream & Thinking Parser, Transport Truth Model, Python Code Detector, and Autonomous ReAct Harness.
                 </p>
               </div>
 
