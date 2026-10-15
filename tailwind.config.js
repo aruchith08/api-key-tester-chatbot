@@ -17,8 +17,9 @@ export default {
         "primary-text": "#EDEDED",
       },
       fontFamily: {
-        editorial: ["'Instrument Serif'", "'Cormorant Garamond'", "Georgia", "serif"],
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        editorial: ["'Times New Roman'", "Times", "Georgia", "serif"],
+        sans: ["'Times New Roman'", "Times", "serif"],
+        serif: ["'Times New Roman'", "Times", "serif"],
       },
       boxShadow: {
         'soft-glow': '0 0 30px -10px rgba(255, 255, 255, 0.05)',

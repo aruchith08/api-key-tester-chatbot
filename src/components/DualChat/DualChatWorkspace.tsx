@@ -435,7 +435,7 @@ export const DualChatWorkspace: React.FC = () => {
                               className="px-2 py-0.5 rounded-md bg-[#161A26] hover:bg-blue-900/40 text-[10px] text-neutral-300 hover:text-blue-300 border border-[#272F45] transition-colors cursor-pointer"
                               title={`Connect ${k.name || k.providerId}`}
                             >
-                              ⚡ {k.name || k.providerId}
+                              {k.name || k.providerId}
                             </button>
                           ))}
                         </div>
@@ -501,7 +501,7 @@ export const DualChatWorkspace: React.FC = () => {
                               className="px-2 py-0.5 rounded-md bg-[#241722] hover:bg-pink-900/40 text-[10px] text-neutral-300 hover:text-pink-300 border border-[#3E273A] transition-colors cursor-pointer"
                               title={`Connect ${k.name || k.providerId}`}
                             >
-                              ⚡ {k.name || k.providerId}
+                              {k.name || k.providerId}
                             </button>
                           ))}
                         </div>
