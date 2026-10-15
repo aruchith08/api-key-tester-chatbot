@@ -45,6 +45,8 @@ export const DualApiKeyModal: React.FC<DualApiKeyModalProps> = ({
     setDualProviderB,
     setDualModelA,
     setDualModelB,
+    setDualModelsA,
+    setDualModelsB,
     setDualNameA,
     setDualNameB
   } = useAppStore();
@@ -84,8 +86,21 @@ export const DualApiKeyModal: React.FC<DualApiKeyModalProps> = ({
       const provider = ProviderRegistry.getById(item.providerId);
       if (!provider) throw new Error(`Provider "${item.providerId}" not found in registry.`);
 
-      // Discover default model or curated fallback
-      const models = ProviderRegistry.getCuratedModels(provider.id);
+      // Discover models dynamically or fallback to provider catalog
+      let models: any[] = [];
+      try {
+        const adapter = ProviderRegistry.resolveAdapter(provider);
+        models = await adapter.getModels(item.apiKey);
+      } catch {
+        // Fallback if offline or network error
+      }
+
+      if (!models || models.length === 0) {
+        models = provider.fallbackModels && provider.fallbackModels.length > 0
+          ? provider.fallbackModels
+          : ProviderRegistry.getCuratedModels(provider.id);
+      }
+
       const chosenModel = models.find(m => m.id === provider.defaultModelId || m.isDefault) || models[0] || {
         id: provider.defaultModelId || 'default',
         name: provider.defaultModelId || `${provider.name} Default`,
@@ -95,18 +110,20 @@ export const DualApiKeyModal: React.FC<DualApiKeyModalProps> = ({
       if (isSlotA) {
         setDualApiKeyA(item.apiKey);
         setDualProviderA(provider);
+        setDualModelsA(models);
         setDualModelA(chosenModel, provider);
         setDualNameA(provider.name);
       } else {
         setDualApiKeyB(item.apiKey);
         setDualProviderB(provider);
+        setDualModelsB(models);
         setDualModelB(chosenModel, provider);
         setDualNameB(provider.name);
       }
 
       ApiKeyStorage.update(item.id, { lastUsedAt: Date.now() });
       refreshStoredKeys();
-      showNotification(`Connected ${slotName} to ${provider.name} (${chosenModel.name || chosenModel.id})!`);
+      showNotification(`Connected ${slotName} to ${provider.name} (${chosenModel.name || chosenModel.id} · ${models.length} models)!`);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to connect stored key.');
@@ -137,10 +154,20 @@ export const DualApiKeyModal: React.FC<DualApiKeyModalProps> = ({
         throw new Error(result.error?.message || `Authentication rejected by ${provider.name}. Check your key.`);
       }
 
-      // Discover models or fallback to curated list
+      // Discover models dynamically or fallback to provider catalog
       let models = result.models || [];
       if (models.length === 0) {
-        models = ProviderRegistry.getCuratedModels(provider.id);
+        try {
+          models = await adapter.getModels(rawKey);
+        } catch {
+          // Fallback if dynamic discovery throws
+        }
+      }
+
+      if (!models || models.length === 0) {
+        models = provider.fallbackModels && provider.fallbackModels.length > 0
+          ? provider.fallbackModels
+          : ProviderRegistry.getCuratedModels(provider.id);
       }
 
       const chosenModel = models.find(m => m.id === provider.defaultModelId || m.isDefault) || models[0] || {
@@ -164,16 +191,18 @@ export const DualApiKeyModal: React.FC<DualApiKeyModalProps> = ({
       if (isSlotA) {
         setDualApiKeyA(rawKey);
         setDualProviderA(provider);
+        setDualModelsA(models);
         setDualModelA(chosenModel, provider);
         setDualNameA(provider.name);
       } else {
         setDualApiKeyB(rawKey);
         setDualProviderB(provider);
+        setDualModelsB(models);
         setDualModelB(chosenModel, provider);
         setDualNameB(provider.name);
       }
 
-      showNotification(`Connected ${slotName} to ${provider.name} (${chosenModel.name || chosenModel.id})!`);
+      showNotification(`Connected ${slotName} to ${provider.name} (${chosenModel.name || chosenModel.id} · ${models.length} models)!`);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to authenticate key.');

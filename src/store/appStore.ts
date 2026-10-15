@@ -70,6 +70,8 @@ interface AppState {
   dualMessages: DualChatMessage[];
   dualModelA: Model | null;
   dualModelB: Model | null;
+  dualModelsA: Model[];
+  dualModelsB: Model[];
   dualProviderA: ProviderDefinition | null;
   dualProviderB: ProviderDefinition | null;
   dualApiKeyA: string;
@@ -144,6 +146,8 @@ interface AppState {
   // Dual Chat Actions
   setDualModelA: (model: Model | null, provider?: ProviderDefinition | null) => void;
   setDualModelB: (model: Model | null, provider?: ProviderDefinition | null) => void;
+  setDualModelsA: (models: Model[]) => void;
+  setDualModelsB: (models: Model[]) => void;
   setDualProviderA: (provider: ProviderDefinition | null) => void;
   setDualProviderB: (provider: ProviderDefinition | null) => void;
   setDualApiKeyA: (key: string) => void;
@@ -198,6 +202,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   dualMessages: [],
   dualModelA: null,
   dualModelB: null,
+  dualModelsA: [],
+  dualModelsB: [],
   dualProviderA: null,
   dualProviderB: null,
   dualApiKeyA: '',
@@ -578,6 +584,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       dualProviderB: dualProviderB !== undefined ? dualProviderB : state.dualProviderB
     }));
   },
+
+  setDualModelsA: (dualModelsA) => set({ dualModelsA }),
+  setDualModelsB: (dualModelsB) => set({ dualModelsB }),
 
   setDualProviderA: (dualProviderA) => {
     set({ dualProviderA, dualModelA: null });

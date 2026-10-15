@@ -48,6 +48,8 @@ export const DualChatWorkspace: React.FC = () => {
     setDualProviderB,
     setDualModelA,
     setDualModelB,
+    setDualModelsA,
+    setDualModelsB,
     setDualNameA,
     setDualNameB,
     showNotification
@@ -91,11 +93,14 @@ export const DualChatWorkspace: React.FC = () => {
   );
 
   // 1-Click quick connect a stored key to a slot
-  const handleQuickConnect = (slot: 'A' | 'B', item: StoredApiKey) => {
+  const handleQuickConnect = async (slot: 'A' | 'B', item: StoredApiKey) => {
     const provider = ProviderRegistry.getById(item.providerId);
     if (!provider) return;
 
-    const models = ProviderRegistry.getCuratedModels(provider.id);
+    let models = provider.fallbackModels && provider.fallbackModels.length > 0
+      ? provider.fallbackModels
+      : ProviderRegistry.getCuratedModels(provider.id);
+
     const chosenModel = models.find(m => m.id === provider.defaultModelId || m.isDefault) || models[0] || {
       id: provider.defaultModelId || 'default',
       name: provider.defaultModelId || `${provider.name} Default`,
@@ -105,18 +110,32 @@ export const DualChatWorkspace: React.FC = () => {
     if (slot === 'A') {
       setDualApiKeyA(item.apiKey);
       setDualProviderA(provider);
+      setDualModelsA(models);
       setDualModelA(chosenModel, provider);
       setDualNameA(provider.name);
     } else {
       setDualApiKeyB(item.apiKey);
       setDualProviderB(provider);
+      setDualModelsB(models);
       setDualModelB(chosenModel, provider);
       setDualNameB(provider.name);
     }
 
     ApiKeyStorage.update(item.id, { lastUsedAt: Date.now() });
     refreshStoredKeys();
-    showNotification(`Connected AI ${slot === 'A' ? '1' : '2'} to ${provider.name}!`);
+    showNotification(`Connected AI ${slot === 'A' ? '1' : '2'} to ${provider.name} (${chosenModel.name || chosenModel.id})!`);
+
+    // Background fetch live models from provider
+    try {
+      const adapter = ProviderRegistry.resolveAdapter(provider);
+      const liveModels = await adapter.getModels(item.apiKey);
+      if (liveModels && liveModels.length > 0) {
+        if (slot === 'A') setDualModelsA(liveModels);
+        else setDualModelsB(liveModels);
+      }
+    } catch {
+      // Ignored: fallback catalog is already loaded
+    }
   };
 
   // Safe send handlers that prompt to add key if missing
@@ -375,13 +394,23 @@ export const DualChatWorkspace: React.FC = () => {
                       <div className="text-[11px] text-neutral-400 font-mono">
                         {dualModelA?.name || dualModelA?.id || 'Default Model'}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveKeyModalSlot('A')}
-                        className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer mt-1"
-                      >
-                        Change Key or Provider
-                      </button>
+                      <div className="flex items-center gap-2 justify-center mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setActiveModelModalSlot('A')}
+                          className="text-xs text-blue-400 hover:text-blue-300 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          Select Model
+                        </button>
+                        <span className="text-neutral-600">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveKeyModalSlot('A')}
+                          className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          Change Key
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full space-y-2.5 my-2">
@@ -431,13 +460,23 @@ export const DualChatWorkspace: React.FC = () => {
                       <div className="text-[11px] text-neutral-400 font-mono">
                         {dualModelB?.name || dualModelB?.id || 'Default Model'}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveKeyModalSlot('B')}
-                        className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer mt-1"
-                      >
-                        Change Key or Provider
-                      </button>
+                      <div className="flex items-center gap-2 justify-center mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setActiveModelModalSlot('B')}
+                          className="text-xs text-pink-400 hover:text-pink-300 font-medium underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          Select Model
+                        </button>
+                        <span className="text-neutral-600">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveKeyModalSlot('B')}
+                          className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+                        >
+                          Change Key
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full space-y-2.5 my-2">
