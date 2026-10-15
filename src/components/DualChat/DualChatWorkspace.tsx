@@ -52,6 +52,8 @@ export const DualChatWorkspace: React.FC = () => {
     setDualModelsB,
     setDualNameA,
     setDualNameB,
+    activeChatTab,
+    setActiveChatTab,
     showNotification
   } = useAppStore();
 
@@ -190,27 +192,39 @@ export const DualChatWorkspace: React.FC = () => {
     <div className="flex flex-col h-screen w-full bg-[#08080A] text-[#EDEDED] select-none overflow-hidden">
       {/* 1. Universal Top Header Bar */}
       <header className="relative shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
-        {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10">
-          <div 
-            className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
-            onClick={() => window.location.reload()}
-            title="ARH"
+        {/* Top-Left: Logo, Return to Chat Button & Workspace Indicator */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 z-10">
+          <button 
+            type="button"
+            className="flex items-center hover:opacity-90 transition-opacity cursor-pointer"
+            onClick={() => setActiveChatTab('chat')}
+            title="Return to Single Chat"
           >
             <ARHLogo size="xs" />
-          </div>
+          </button>
 
-          <div className="h-4 w-px bg-neutral-800 hidden xs:block" />
+          {/* Dedicated Back to Chat Navigation Button for both Web & Mobile */}
+          <button
+            type="button"
+            onClick={() => setActiveChatTab('chat')}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#141418] hover:bg-[#1E1E26] text-neutral-300 hover:text-white border border-[#262630] hover:border-neutral-500 rounded-xl text-xs font-medium transition-all cursor-pointer group shrink-0 shadow-xs"
+            title="Return to Single Chat"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-neutral-400 group-hover:text-white" />
+            <span className="hidden xs:inline font-medium">Back to Chat</span>
+            <span className="xs:hidden font-medium">Chat</span>
+          </button>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#141418] border border-[#24242A] text-xs text-neutral-300">
+          <div className="h-4 w-px bg-neutral-800 hidden md:block" />
+
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#141418] border border-[#24242A] text-xs text-neutral-300">
             <Sparkles className="w-3 h-3 text-purple-400" />
-            <span className="font-medium hidden sm:inline">Dual AI Workspace</span>
-            <span className="font-medium sm:hidden">Dual</span>
+            <span className="font-medium">Dual AI Workspace</span>
           </div>
         </div>
 
-        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Dead Center in Header) */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-auto hidden sm:block z-20">
+        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Dead Center in Header on desktop) */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-auto hidden md:block z-20">
           <ChatModeToggle />
         </div>
 

@@ -4,7 +4,7 @@ import { ChatMessageItem } from './ChatMessageItem';
 import { ChatInput } from './ChatInput';
 import { ARHLogo } from '../Home/ARHLogo';
 import { ChatModeToggle } from '../Navigation/ChatModeToggle';
-import { Atom, RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info, Database } from 'lucide-react';
+import { Atom, RotateCcw, Trash2, Terminal, Zap, ArrowDown, Info, Database, Sparkles } from 'lucide-react';
 import type { MessageAttachment } from '../../types/chat';
 
 interface ChatConversationProps {
@@ -91,6 +91,16 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
             <span className="font-medium truncate max-w-[85px] xs:max-w-[120px] sm:max-w-[180px]">
               {selectedModel?.name || selectedModel?.id || 'No Model'}
             </span>
+          </button>
+          {/* Quick Dual Mode Pill for Mobile */}
+          <button
+            type="button"
+            onClick={() => setActiveChatTab('dual')}
+            className="sm:hidden flex items-center gap-1 px-2 py-1 bg-purple-950/30 hover:bg-purple-900/40 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-medium cursor-pointer shrink-0"
+            title="Switch to Dual AI Arena"
+          >
+            <Sparkles className="w-3 h-3 text-purple-400" />
+            <span>Dual</span>
           </button>
         </div>
 
