@@ -98,4 +98,22 @@ export class ProviderRegistry {
       }
     };
   }
+
+  public static getCuratedModels(id: string): any[] {
+    const provider = this.getById(id);
+    if (!provider) return [];
+    if (provider.fallbackModels && provider.fallbackModels.length > 0) {
+      return provider.fallbackModels;
+    }
+    if (provider.defaultModelId) {
+      return [{
+        id: provider.defaultModelId,
+        name: provider.defaultModelId,
+        provider: provider.name,
+        isDefault: true,
+        capabilities: { ...(provider.capabilities || {}) }
+      }];
+    }
+    return [];
+  }
 }
