@@ -24,10 +24,31 @@ export const DualAutoChatBar: React.FC<DualAutoChatBarProps> = ({
     dualModelA,
     dualProviderB,
     dualModelB,
+    dualApiKeyA,
+    dualApiKeyB,
+    storedKeys,
+    selectedProvider,
+    apiKey,
     isDualGenerating
   } = useAppStore();
 
-  const isConfigured = Boolean(dualProviderA && dualModelA && dualProviderB && dualModelB);
+  const isSlotAConnected = Boolean(
+    dualProviderA && (
+      dualApiKeyA || 
+      storedKeys.some(k => k.providerId === dualProviderA.id) ||
+      (selectedProvider?.id === dualProviderA.id && apiKey)
+    )
+  );
+
+  const isSlotBConnected = Boolean(
+    dualProviderB && (
+      dualApiKeyB || 
+      storedKeys.some(k => k.providerId === dualProviderB.id) ||
+      (selectedProvider?.id === dualProviderB.id && apiKey)
+    )
+  );
+
+  const isConfigured = Boolean(isSlotAConnected && isSlotBConnected && dualModelA && dualModelB);
 
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-2 bg-[#0F0F14] border border-[#22222A] rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-sm text-xs">

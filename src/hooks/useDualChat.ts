@@ -82,17 +82,24 @@ export function useDualChat() {
   ]);
 
   const buildHistoryForSlot = useCallback((slot: 'A' | 'B', extraUserPrompt?: string, extraAttachments: MessageAttachment[] = []) => {
-    const { systemPrompt } = resolveSlotContext(slot);
+    const { systemPrompt, displayName } = resolveSlotContext(slot);
+    const otherSlot = slot === 'A' ? 'B' : 'A';
+    const otherContext = resolveSlotContext(otherSlot);
+    const otherName = otherContext.displayName || (slot === 'A' ? 'AI 2' : 'AI 1');
+
     const history: ChatMessage[] = [];
 
-    if (systemPrompt && systemPrompt.trim()) {
-      history.push({
-        id: 'sys_' + slot,
-        role: 'system',
-        content: systemPrompt.trim(),
-        timestamp: 0
-      });
-    }
+    // System prompt: user's custom system prompt or natural conversational peer directive
+    const effectiveSystemPrompt = systemPrompt?.trim()
+      ? systemPrompt.trim()
+      : `You are ${displayName}, in an active conversation with ${otherName}. Keep your responses direct, conversational, and concise, responding directly to what ${otherName} says.`;
+
+    history.push({
+      id: 'sys_' + slot,
+      role: 'system',
+      content: effectiveSystemPrompt,
+      timestamp: 0
+    });
 
     // Always read from live store snapshot to avoid stale closure state
     const currentDualMessages = useAppStore.getState().dualMessages;
@@ -107,6 +114,7 @@ export function useDualChat() {
           timestamp: msg.timestamp
         });
       } else if ((slot === 'A' && msg.role === 'ai1') || (slot === 'B' && msg.role === 'ai2')) {
+        // Own past responses
         if (msg.content && !msg.error) {
           history.push({
             id: msg.id,
@@ -387,21 +395,71 @@ export function useDualChat() {
   const startAutoConversation = useCallback(async (starterPrompt?: string) => {
     if (isDualGenerating) return;
 
-    const { dualProviderA, dualProviderB, dualModelA, dualModelB } = useAppStore.getState();
+    const { 
+      dualProviderA, 
+      dualProviderB, 
+      dualModelA, 
+      dualModelB,
+      dualApiKeyA,
+      dualApiKeyB,
+      storedKeys,
+      selectedProvider,
+      apiKey
+    } = useAppStore.getState();
+
     if (!dualProviderA || !dualModelA || !dualProviderB || !dualModelB) {
       showNotification('Please configure both AI 1 and AI 2 (provider & model) before starting auto conversation.');
       return;
     }
 
+    const isSlotAConnected = Boolean(
+      dualApiKeyA || 
+      storedKeys.some(k => k.providerId === dualProviderA.id) ||
+      (selectedProvider?.id === dualProviderA.id && apiKey)
+    );
+    const isSlotBConnected = Boolean(
+      dualApiKeyB || 
+      storedKeys.some(k => k.providerId === dualProviderB.id) ||
+      (selectedProvider?.id === dualProviderB.id && apiKey)
+    );
+
+    if (!isSlotAConnected || !isSlotBConnected) {
+      showNotification('Please connect API keys for both AI 1 and AI 2 before starting auto conversation.');
+      return;
+    }
+
+    const currentMessages = useAppStore.getState().dualMessages;
+
+    // If starting fresh or a prompt is explicitly given:
     if (starterPrompt && starterPrompt.trim()) {
-      addDualUserMessage(starterPrompt.trim(), 'both');
+      addDualUserMessage(starterPrompt.trim(), 'ai1');
+    } else if (currentMessages.length === 0) {
+      // Prompt the first AI to introduce itself so the conversation kicks off!
+      addDualUserMessage('Please introduce yourself and start the conversation.', 'ai1');
     }
 
     setAutoChatState('running');
     let currentTurn = autoChatCurrentTurn || 0;
     const limit = autoChatTurnLimit || 10;
-    let nextSpeaker: 'A' | 'B' = currentTurn % 2 === 0 ? 'A' : 'B';
 
+    // Determine who speaks next based on the latest completed message in the transcript
+    const lastCompletedMsg = useAppStore.getState().dualMessages
+      .slice()
+      .reverse()
+      .find(m => !m.isStreaming && !m.error);
+
+    let nextSpeaker: 'A' | 'B' = 'A';
+    if (lastCompletedMsg?.role === 'ai1') {
+      nextSpeaker = 'B';
+    } else if (lastCompletedMsg?.role === 'ai2') {
+      nextSpeaker = 'A';
+    } else if (lastCompletedMsg?.target === 'ai2') {
+      nextSpeaker = 'B';
+    } else {
+      nextSpeaker = 'A';
+    }
+
+    // Run sequentially: one AI responds completely before the other begins
     while (currentTurn < limit) {
       const liveState = useAppStore.getState().autoChatState;
       if (liveState !== 'running') {
@@ -417,6 +475,7 @@ export function useDualChat() {
 
       let success = false;
       try {
+        // Await full completion of the current AI's response
         success = await streamSlot(nextSpeaker, controller.signal);
       } finally {
         setDualGenerating(false, null);
@@ -427,6 +486,7 @@ export function useDualChat() {
         break;
       }
 
+      // Alternate to the other AI for the next turn
       nextSpeaker = nextSpeaker === 'A' ? 'B' : 'A';
 
       // Brief delay between turns for readability
