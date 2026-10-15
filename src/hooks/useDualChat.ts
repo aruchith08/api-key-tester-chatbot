@@ -94,7 +94,10 @@ export function useDualChat() {
       });
     }
 
-    dualMessages.forEach((msg) => {
+    // Always read from live store snapshot to avoid stale closure state
+    const currentDualMessages = useAppStore.getState().dualMessages;
+
+    currentDualMessages.forEach((msg) => {
       if (msg.role === 'user') {
         history.push({
           id: msg.id,
@@ -112,7 +115,7 @@ export function useDualChat() {
             timestamp: msg.timestamp
           });
         }
-      } else {
+      } else if (msg.role === 'ai1' || msg.role === 'ai2') {
         // Opposing AI's turn from this AI's perspective
         if (msg.content && !msg.error) {
           const speaker = msg.senderName || (msg.role === 'ai1' ? 'AI 1' : 'AI 2');
@@ -137,7 +140,7 @@ export function useDualChat() {
     }
 
     return history;
-  }, [dualMessages, resolveSlotContext]);
+  }, [resolveSlotContext]);
 
   const streamSlot = useCallback(async (
     slot: 'A' | 'B',
@@ -233,30 +236,49 @@ export function useDualChat() {
       for await (const chunk of stream) {
         if (signal.aborted) break;
 
-        if (!ttftRecorded && (chunk.delta || chunk.content || chunk.thinking)) {
-          ttftMs = Date.now() - startTime;
-          ttftRecorded = true;
+        // Handle error events yielded by stream adapters
+        if ((chunk as any).type === 'error') {
+          const err = (chunk as any).error;
+          throw new Error(err?.message || err?.providerMessage || 'Provider error');
         }
 
-        if (chunk.thinking) {
-          accumulatedThinking += chunk.thinking;
+        let deltaContent = '';
+        let deltaThinking = '';
+
+        if ((chunk as any).type === 'token' && typeof (chunk as any).content === 'string') {
+          deltaContent = (chunk as any).content;
+        } else if ((chunk as any).type === 'thinking' && typeof (chunk as any).content === 'string') {
+          deltaThinking = (chunk as any).content;
+        } else if ((chunk as any).delta) {
+          deltaContent = (chunk as any).delta;
+        } else if ((chunk as any).thinking) {
+          deltaThinking = (chunk as any).thinking;
+        } else if (typeof chunk === 'string') {
+          deltaContent = chunk;
         }
 
-        if (chunk.delta) {
-          accumulated += chunk.delta;
-        } else if (chunk.content) {
-          accumulated = chunk.content;
-        }
-
-        updateDualMessage(placeholderId, {
-          content: accumulated,
-          thinking: accumulatedThinking || undefined,
-          isStreaming: true,
-          metrics: {
-            ttftMs: ttftMs ?? (Date.now() - startTime),
-            totalDurationMs: Date.now() - startTime
+        if (deltaContent || deltaThinking) {
+          if (!ttftRecorded) {
+            ttftMs = Date.now() - startTime;
+            ttftRecorded = true;
           }
-        });
+          if (deltaContent) {
+            accumulated += deltaContent;
+          }
+          if (deltaThinking) {
+            accumulatedThinking += deltaThinking;
+          }
+
+          updateDualMessage(placeholderId, {
+            content: accumulated,
+            thinking: accumulatedThinking || undefined,
+            isStreaming: true,
+            metrics: {
+              ttftMs: ttftMs ?? (Date.now() - startTime),
+              totalDurationMs: Date.now() - startTime
+            }
+          });
+        }
       }
 
       const totalDurationMs = Date.now() - startTime;
