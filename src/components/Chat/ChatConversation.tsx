@@ -128,12 +128,12 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 h-9 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             title="Switch or manage stored API keys"
           >
-            <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Keys</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">
+            <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700 shrink-0">
               {storedKeys.length}
             </span>
           </button>
@@ -142,22 +142,22 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 h-9 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             title="About ARH"
           >
-            <Info className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden sm:inline">About</span>
+            <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">About</span>
           </button>
 
           {/* Dev Mode */}
           <button
             type="button"
             onClick={() => setDeveloperModeOpen(true)}
-            className="flex items-center gap-1.5 px-2 py-1.5 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 h-9 bg-[#141416] hover:bg-[#1C1C20] border border-[#25252A] rounded-xl text-xs text-neutral-300 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
             title="Developer Mode"
           >
-            <Terminal className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden md:inline">Dev Mode</span>
+            <Terminal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="hidden md:inline whitespace-nowrap">Dev Mode</span>
           </button>
         </div>
       </header>

@@ -196,18 +196,18 @@ export const DualChatWorkspace: React.FC = () => {
         </div>
 
         {/* Top-Right: Actions */}
-        <div className="justify-self-end flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="justify-self-end flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Clear Dual Chat if messages exist */}
           {dualMessages.length > 0 && (
             <button
               type="button"
               onClick={clearDualChat}
               disabled={isDualGenerating}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 h-9 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer shrink-0 whitespace-nowrap"
               title="Clear dual conversation"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline">Clear</span>
+              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden lg:inline whitespace-nowrap">Clear</span>
             </button>
           )}
 
@@ -215,12 +215,12 @@ export const DualChatWorkspace: React.FC = () => {
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer"
+            className="group flex items-center gap-1.5 px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap"
             title="Stored API Keys Vault"
           >
-            <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden lg:inline">Stored Keys</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700">
+            <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden lg:inline whitespace-nowrap">Stored Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
               {storedKeys.length}
             </span>
           </button>
@@ -229,11 +229,11 @@ export const DualChatWorkspace: React.FC = () => {
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#242429] rounded-xl text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#242429] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
             title="About ARH"
           >
-            <Info className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden sm:inline">About</span>
+            <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap">About</span>
           </button>
         </div>
       </header>

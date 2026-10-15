@@ -59,18 +59,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
 
         {/* Top-Right: Add API Key, Stored Keys & About Actions */}
         <div className="justify-self-end flex items-center gap-2 shrink-0">
-          {/* Add API Key */}
+          {/* Add API Key / Connected Provider */}
           <button
             type="button"
             onClick={() => setApiKeyModalOpen(true)}
-            className="group flex items-center gap-2 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
+            className="group flex items-center gap-2 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
             title={isConnected ? `Connected: ${selectedProvider?.name || 'API Key Connected'}` : 'Connect API Key'}
           >
-            <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-            <span className="hidden md:inline">{isConnected ? (selectedProvider?.name || 'Connected') : 'Add API Key'}</span>
-            <span className="md:hidden">{isConnected ? 'Key' : 'Add Key'}</span>
+            <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors shrink-0" />
+            <span className="whitespace-nowrap">
+              {isConnected ? (selectedProvider?.name || 'Connected') : 'Add API Key'}
+            </span>
             {isConnected && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 shrink-0" />
             )}
           </button>
 
@@ -78,12 +79,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="group flex items-center gap-2 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 cursor-pointer"
+            className="group flex items-center gap-2 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
             title="Open Stored API Keys Vault"
           >
-            <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden md:inline">Stored Keys</span>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700">
+            <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="whitespace-nowrap">Stored Keys</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
               {storedKeys.length}
             </span>
           </button>
@@ -92,11 +93,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap"
             title="About ARH Application"
           >
-            <Info className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="hidden sm:inline">About</span>
+            <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="whitespace-nowrap">About</span>
           </button>
 
           {/* Dev Mode (Inspector) */}
@@ -104,11 +105,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
             <button
               type="button"
               onClick={() => setDeveloperModeOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs sm:text-sm transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
               title="Open Developer Inspector"
             >
-              <Terminal className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="hidden lg:inline">Dev Mode</span>
+              <Terminal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <span className="whitespace-nowrap">Dev Mode</span>
             </button>
           )}
         </div>
