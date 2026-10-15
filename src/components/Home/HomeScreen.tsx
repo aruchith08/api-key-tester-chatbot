@@ -36,7 +36,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       />
 
       {/* Top Header Bar */}
-      <header className="relative z-10 grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-7xl mx-auto gap-2">
+      <header className="relative z-50 pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-7xl mx-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
         <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div 
@@ -115,20 +115,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       </header>
 
       {/* Main Centered Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center -mt-20 sm:-mt-28 md:-mt-36 w-full max-w-3xl mx-auto px-2">
-        {/* ARH Metallic Logo Badge */}
-        <div className="mb-4 sm:mb-5 animate-fade-in">
-          <ARHLogo size="md" />
-        </div>
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-2 pointer-events-auto">
+        <div className="w-full flex flex-col items-center -translate-y-8 sm:-translate-y-12 md:-translate-y-16">
+          {/* ARH Metallic Logo Badge */}
+          <div className="mb-4 sm:mb-5 animate-fade-in">
+            <ARHLogo size="md" />
+          </div>
 
-        {/* Dynamic Editorial Greeting */}
-        <div className="mb-6 sm:mb-7 text-center px-4">
-          <Greeting />
-        </div>
+          {/* Dynamic Editorial Greeting */}
+          <div className="mb-6 sm:mb-7 text-center px-4">
+            <Greeting />
+          </div>
 
-        {/* Centered Chat Input Card */}
-        <div className="w-full">
-          <ChatInput onSend={onSendMessage} />
+          {/* Centered Chat Input Card */}
+          <div className="w-full">
+            <ChatInput onSend={onSendMessage} />
+          </div>
         </div>
       </main>
 

@@ -67,7 +67,7 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   return (
     <div className="flex flex-col h-screen w-full bg-[#09090A] text-[#EDEDED] select-none overflow-hidden">
       {/* Top Conversation Header */}
-      <header className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-20 gap-2">
+      <header className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
         {/* Left: Brand logo & Subtitle */}
         <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <button
