@@ -8,7 +8,7 @@ import { DeveloperMode } from './components/Developer/DeveloperMode';
 import { AboutModal } from './components/About/AboutModal';
 import { FilePreviewDrawer } from './components/Chat/FilePreviewDrawer';
 import { useAppStore } from './store/appStore';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, X } from 'lucide-react';
 
 export function App() {
   const { activeChatTab, setActiveChatTab, notification, clearNotification } = useAppStore();
@@ -24,14 +24,15 @@ export function App() {
 
   return (
     <div className="relative min-h-screen bg-[#09090A] text-[#EDEDED] font-sans antialiased overflow-x-hidden">
-      {/* Toast Notification */}
+      {/* Toast Notification (Positioned cleanly below header and capsule to prevent overlap) */}
       {notification && (
         <div 
           onClick={clearNotification}
-          className="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-[#18181B] text-neutral-200 border border-[#2B2B30] rounded-xl shadow-2xl text-xs sm:text-sm cursor-pointer hover:border-neutral-500 transition-all animate-fade-in"
+          className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2.5 px-4 py-2.5 bg-[#15151A]/95 backdrop-blur-md text-neutral-200 border border-[#2F2F38] hover:border-neutral-400 rounded-2xl shadow-2xl shadow-black/80 text-xs sm:text-sm cursor-pointer transition-all animate-fade-in max-w-[92vw] sm:max-w-md pointer-events-auto"
         >
           <AlertCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{notification}</span>
+          <span className="truncate">{notification}</span>
+          <X className="w-3.5 h-3.5 text-neutral-400 hover:text-white shrink-0 ml-1" />
         </div>
       )}
 

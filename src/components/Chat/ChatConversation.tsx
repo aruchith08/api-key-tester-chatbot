@@ -67,9 +67,9 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
   return (
     <div className="flex flex-col h-screen w-full bg-[#09090A] text-[#EDEDED] select-none overflow-hidden">
       {/* Top Conversation Header */}
-      <header className="shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
+      <header className="relative shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
         {/* Left: Brand logo & Model pill */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10">
           <button
             type="button"
             onClick={clearChat}
@@ -94,13 +94,13 @@ export const ChatConversation: React.FC<ChatConversationProps> = ({
           </button>
         </div>
 
-        {/* Center: Segmented Pill Switcher [ Chat | Dual ] */}
-        <div className="hidden sm:block">
+        {/* Center: Segmented Pill Switcher [ Chat | Dual ] (Dead Center in Header) */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-auto hidden sm:block z-20">
           <ChatModeToggle />
         </div>
 
         {/* Right Actions: Regenerate, Clear, Keys, About, Dev Mode */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 z-10">
           {/* Regenerate */}
           <button
             type="button"

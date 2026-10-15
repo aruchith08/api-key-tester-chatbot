@@ -52,8 +52,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           </span>
         </div>
 
-        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Centered in page on desktop, hidden on mobile) */}
-        <div className="hidden sm:block">
+        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Dead Center in Header on desktop) */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-auto hidden sm:block">
           <ChatModeToggle />
         </div>
 

@@ -189,9 +189,9 @@ export const DualChatWorkspace: React.FC = () => {
   return (
     <div className="flex flex-col h-screen w-full bg-[#08080A] text-[#EDEDED] select-none overflow-hidden">
       {/* 1. Universal Top Header Bar */}
-      <header className="shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
+      <header className="relative shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 z-10">
           <div 
             className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
@@ -209,13 +209,13 @@ export const DualChatWorkspace: React.FC = () => {
           </div>
         </div>
 
-        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] */}
-        <div className="hidden sm:block">
+        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Dead Center in Header) */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-auto hidden sm:block z-20">
           <ChatModeToggle />
         </div>
 
         {/* Top-Right: Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 z-10">
           {/* Clear Dual Chat if messages exist */}
           {dualMessages.length > 0 && (
             <button
