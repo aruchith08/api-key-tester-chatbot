@@ -36,9 +36,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       />
 
       {/* Top Header Bar */}
-      <header className="relative z-50 pointer-events-auto grid grid-cols-[1fr_auto_1fr] items-center w-full max-w-7xl mx-auto gap-2">
+      <header className="relative z-50 pointer-events-auto flex items-center justify-between w-full max-w-7xl mx-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div 
             className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
@@ -46,32 +46,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           >
             <ARHLogo size="xs" />
           </div>
-          <div className="h-4 w-px bg-neutral-800" aria-hidden="true" />
-          <span className="text-xs sm:text-sm text-neutral-400 font-normal tracking-wide hidden xs:inline">
+          <div className="h-4 w-px bg-neutral-800 hidden sm:block" aria-hidden="true" />
+          <span className="text-xs sm:text-sm text-neutral-400 font-normal tracking-wide hidden sm:inline">
             AI API Testing Ground
           </span>
         </div>
 
-        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Centered in page) */}
-        <div className="justify-self-center">
+        {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] (Centered in page on desktop, hidden on mobile) */}
+        <div className="hidden sm:block">
           <ChatModeToggle />
         </div>
 
         {/* Top-Right: Add API Key, Stored Keys & About Actions */}
-        <div className="justify-self-end flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Add API Key / Connected Provider */}
           <button
             type="button"
             onClick={() => setApiKeyModalOpen(true)}
-            className="group flex items-center gap-2 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
+            className="group flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0"
             title={isConnected ? `Connected: ${selectedProvider?.name || 'API Key Connected'}` : 'Connect API Key'}
           >
-            <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors shrink-0" />
-            <span className="whitespace-nowrap">
+            <KeyRound className="w-4 h-4 text-neutral-400 group-hover:text-emerald-400 transition-colors shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap ml-2">
               {isConnected ? (selectedProvider?.name || 'Connected') : 'Add API Key'}
             </span>
             {isConnected && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-1 shrink-0" />
             )}
           </button>
 
@@ -79,25 +79,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="group flex items-center gap-2 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0 whitespace-nowrap"
+            className="group relative flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all duration-200 cursor-pointer shrink-0"
             title="Open Stored API Keys Vault"
           >
-            <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="whitespace-nowrap">Stored Keys</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
+            <Database className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap ml-2">Stored Keys</span>
+            {/* Desktop badge */}
+            <span className="hidden sm:inline-flex ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
               {storedKeys.length}
             </span>
+            {/* Mobile badge matching user screenshot */}
+            {storedKeys.length > 0 && (
+              <span className="sm:hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-[#1C1C22] text-neutral-300 border border-[#3A3A45] flex items-center justify-center shadow-md">
+                {storedKeys.length}
+              </span>
+            )}
           </button>
 
           {/* About */}
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 h-9 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 bg-[#101013] hover:bg-[#18181D] text-neutral-200 hover:text-white border border-[#232328] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0"
             title="About ARH Application"
           >
-            <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-            <span className="whitespace-nowrap">About</span>
+            <Info className="w-4 h-4 text-neutral-400 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap ml-1.5">About</span>
           </button>
 
           {/* Dev Mode (Inspector) */}
@@ -105,11 +112,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
             <button
               type="button"
               onClick={() => setDeveloperModeOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+              className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-2.5 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] hover:border-[#303036] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0"
               title="Open Developer Inspector"
             >
-              <Terminal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              <span className="whitespace-nowrap">Dev Mode</span>
+              <Terminal className="w-4 h-4 text-neutral-400 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap ml-1.5">Dev Mode</span>
             </button>
           )}
         </div>
@@ -117,15 +124,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
 
       {/* Main Centered Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center w-full max-w-3xl mx-auto px-2 pointer-events-auto">
-        <div className="w-full flex flex-col items-center -translate-y-8 sm:-translate-y-12 md:-translate-y-16">
+        <div className="w-full flex flex-col items-center -translate-y-4 sm:-translate-y-8 md:-translate-y-12">
           {/* ARH Metallic Logo Badge */}
           <div className="mb-4 sm:mb-5 animate-fade-in">
             <ARHLogo size="md" />
           </div>
 
           {/* Dynamic Editorial Greeting */}
-          <div className="mb-6 sm:mb-7 text-center px-4">
+          <div className="mb-5 sm:mb-7 text-center px-4">
             <Greeting />
+          </div>
+
+          {/* Mobile Segmented Pill Switcher [ Chat | Dual ] (Centered below greeting on mobile) */}
+          <div className="sm:hidden mb-6 flex justify-center w-full animate-fade-in">
+            <ChatModeToggle />
           </div>
 
           {/* Centered Chat Input Card */}

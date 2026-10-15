@@ -149,12 +149,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
   const isMultiLine = text.includes('\n') || text.length > 80;
 
   return (
-    <div className={`w-full max-w-[720px] mx-auto transition-all duration-300 ${compact ? 'px-2' : 'px-3 sm:px-4'}`}>
+    <div className={`w-full max-w-[720px] mx-auto transition-all duration-300 ${compact ? 'px-1 sm:px-2' : 'px-2 sm:px-4'}`}>
       <div 
         className={`relative bg-[#101013] border border-[#222227] hover:border-[#2D2D34] focus-within:border-[#383842] focus-within:ring-1 focus-within:ring-white/5 transition-all duration-200 shadow-2xl shadow-black/70 ${
           isMultiLine || attachments.length > 0 || isListening
-            ? 'rounded-2xl py-2.5 px-3 sm:px-4'
-            : 'rounded-full py-1.5 px-2.5 sm:px-3.5'
+            ? 'rounded-2xl py-2 px-2.5 sm:px-4'
+            : 'rounded-full py-1.5 px-2 sm:px-3.5'
         }`}
       >
         {/* Top attachment previews if any */}
@@ -313,7 +313,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
                   setModelSelectorOpen(true);
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141418] hover:bg-[#1A1A20] border border-[#23232A] hover:border-[#35353D] rounded-xl text-xs font-medium text-neutral-200 transition-all cursor-pointer max-w-[130px] sm:max-w-[200px]"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#141418] hover:bg-[#1A1A20] border border-[#23232A] hover:border-[#35353D] rounded-xl text-xs font-medium text-neutral-200 transition-all cursor-pointer max-w-[105px] xs:max-w-[130px] sm:max-w-[200px] shrink-0"
               title={selectedModel ? `Model: ${selectedModel.name || selectedModel.id}` : 'Select Model'}
             >
               <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0 fill-emerald-400/20" />
@@ -328,7 +328,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, compact = false })
               type="button"
               onClick={handleSubmit}
               disabled={!hasText && !isGenerating}
-              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all ${
+              className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full transition-all shrink-0 ${
                 isGenerating
                   ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 ring-1 ring-red-500/50 cursor-pointer'
                   : hasText

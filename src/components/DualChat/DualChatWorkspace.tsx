@@ -189,9 +189,9 @@ export const DualChatWorkspace: React.FC = () => {
   return (
     <div className="flex flex-col h-screen w-full bg-[#08080A] text-[#EDEDED] select-none overflow-hidden">
       {/* 1. Universal Top Header Bar */}
-      <header className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
+      <header className="shrink-0 flex items-center justify-between px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-50 pointer-events-auto gap-2">
         {/* Top-Left: ARH Logo & Subtitle */}
-        <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div 
             className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
@@ -210,23 +210,23 @@ export const DualChatWorkspace: React.FC = () => {
         </div>
 
         {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] */}
-        <div className="justify-self-center">
+        <div className="hidden sm:block">
           <ChatModeToggle />
         </div>
 
         {/* Top-Right: Actions */}
-        <div className="justify-self-end flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Clear Dual Chat if messages exist */}
           {dualMessages.length > 0 && (
             <button
               type="button"
               onClick={clearDualChat}
               disabled={isDualGenerating}
-              className="flex items-center gap-1.5 px-2.5 h-9 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer shrink-0 whitespace-nowrap"
+              className="flex items-center justify-center w-8 h-8 sm:w-auto sm:px-2.5 h-9 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer shrink-0"
               title="Clear dual conversation"
             >
               <Trash2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden lg:inline whitespace-nowrap">Clear</span>
+              <span className="hidden lg:inline ml-1.5 whitespace-nowrap">Clear</span>
             </button>
           )}
 
@@ -234,25 +234,32 @@ export const DualChatWorkspace: React.FC = () => {
           <button
             type="button"
             onClick={() => setKeyVaultOpen(true)}
-            className="group flex items-center gap-1.5 px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            className="group relative flex items-center justify-center w-8 h-8 sm:w-auto sm:px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs font-medium shadow-sm transition-all cursor-pointer shrink-0"
             title="Stored API Keys Vault"
           >
             <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="hidden lg:inline whitespace-nowrap">Stored Keys</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
+            <span className="hidden lg:inline ml-1.5 whitespace-nowrap">Stored Keys</span>
+            {/* Desktop badge */}
+            <span className="hidden sm:inline-flex ml-1.5 px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-neutral-800 text-neutral-300 group-hover:text-white border border-neutral-700 shrink-0">
               {storedKeys.length}
             </span>
+            {/* Mobile badge */}
+            {storedKeys.length > 0 && (
+              <span className="sm:hidden absolute -top-1 -right-1 min-w-[16px] h-[16px] px-0.5 rounded-full text-[9px] font-bold bg-[#1A1A22] text-neutral-300 border border-[#353542] flex items-center justify-center shadow-md">
+                {storedKeys.length}
+              </span>
+            )}
           </button>
 
           {/* About */}
           <button
             type="button"
             onClick={() => setAboutModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#242429] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap"
+            className="flex items-center justify-center w-8 h-8 sm:w-auto sm:px-3 h-9 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#242429] rounded-xl text-xs font-medium transition-all cursor-pointer shrink-0"
             title="About ARH"
           >
             <Info className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-            <span className="hidden sm:inline whitespace-nowrap">About</span>
+            <span className="hidden sm:inline ml-1.5 whitespace-nowrap">About</span>
           </button>
         </div>
       </header>
@@ -366,6 +373,11 @@ export const DualChatWorkspace: React.FC = () => {
         <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-5xl w-full mx-auto">
           {dualMessages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto px-4 text-center select-none py-6 sm:py-10">
+              {/* Mobile Capsule Toggle */}
+              <div className="sm:hidden mb-5 flex justify-center w-full">
+                <ChatModeToggle />
+              </div>
+
               <div className="w-12 h-12 rounded-2xl bg-[#141418] border border-[#24242C] flex items-center justify-center mb-4 shadow-lg text-purple-400">
                 <Sparkles className="w-6 h-6" />
               </div>
