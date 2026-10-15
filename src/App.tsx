@@ -1,7 +1,6 @@
-import React from 'react';
-import { HomeScreen } from './components/Home/HomeScreen';
-import { ChatConversation } from './components/Chat/ChatConversation';
-import { DualChatWorkspace } from './components/DualChat/DualChatWorkspace';
+import React, { useEffect } from 'react';
+import { ChatPage } from './pages/ChatPage';
+import { DualPage } from './pages/DualPage';
 import { AddApiKeyModal } from './components/API/AddApiKeyModal';
 import { StoredKeysModal } from './components/API/StoredKeysModal';
 import { ModelSelector } from './components/Chat/ModelSelector';
@@ -9,14 +8,19 @@ import { DeveloperMode } from './components/Developer/DeveloperMode';
 import { AboutModal } from './components/About/AboutModal';
 import { FilePreviewDrawer } from './components/Chat/FilePreviewDrawer';
 import { useAppStore } from './store/appStore';
-import { useChat } from './hooks/useChat';
 import { AlertCircle } from 'lucide-react';
 
 export function App() {
-  const { messages, activeChatTab, notification, clearNotification } = useAppStore();
-  const { sendMessage, regenerate } = useChat();
+  const { activeChatTab, setActiveChatTab, notification, clearNotification } = useAppStore();
 
-  const isConversationActive = messages.length > 0;
+  useEffect(() => {
+    const handlePopState = () => {
+      const isDual = typeof window !== 'undefined' && window.location.pathname.startsWith('/dual');
+      setActiveChatTab(isDual ? 'dual' : 'chat');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveChatTab]);
 
   return (
     <div className="relative min-h-screen bg-[#09090A] text-[#EDEDED] font-sans antialiased overflow-x-hidden">
@@ -31,15 +35,9 @@ export function App() {
         </div>
       )}
 
-      {/* Main View: Dual Chat Workspace OR Single AI Home/Conversation */}
+      {/* Dedicated Page Router: ChatPage (/) vs DualPage (/dual) */}
       <div key={activeChatTab} className="min-h-screen w-full animate-fade-in">
-        {activeChatTab === 'dual' ? (
-          <DualChatWorkspace />
-        ) : !isConversationActive ? (
-          <HomeScreen onSendMessage={sendMessage} />
-        ) : (
-          <ChatConversation onSendMessage={sendMessage} onRegenerate={regenerate} />
-        )}
+        {activeChatTab === 'dual' ? <DualPage /> : <ChatPage />}
       </div>
 
       {/* Modals & Drawers */}

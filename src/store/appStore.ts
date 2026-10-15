@@ -214,8 +214,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   autoChatTurnLimit: 10,
   autoChatCurrentTurn: 0,
   
-  activeChatTab: 'chat',
-  setActiveChatTab: (activeChatTab) => set({ activeChatTab }),
+  activeChatTab: (typeof window !== 'undefined' && window.location.pathname.startsWith('/dual')) ? 'dual' : 'chat',
+  setActiveChatTab: (activeChatTab) => {
+    if (typeof window !== 'undefined') {
+      const targetPath = activeChatTab === 'dual' ? '/dual' : '/';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState(null, '', targetPath);
+      }
+    }
+    set({ activeChatTab });
+  },
   storedKeys: ApiKeyStorage.getAll(),
   isKeyVaultOpen: false,
   isApiKeyModalOpen: false,
