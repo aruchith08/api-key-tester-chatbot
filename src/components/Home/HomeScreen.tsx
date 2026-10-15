@@ -31,7 +31,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
     <div className="relative min-h-screen w-full bg-[#08080A] flex flex-col justify-between p-4 sm:p-6 md:p-8 overflow-hidden select-none">
       {/* Background ambient lighting - soft vignette glow */}
       <div 
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[550px] bg-gradient-to-b from-white/[0.018] via-white/[0.006] to-transparent rounded-full blur-3xl" 
+        className="pointer-events-none absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[550px] bg-gradient-to-b from-white/[0.018] via-white/[0.006] to-transparent rounded-full blur-3xl" 
         aria-hidden="true"
       />
 
@@ -115,14 +115,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onSendMessage }) => {
       </header>
 
       {/* Main Centered Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center -mt-6 sm:-mt-10 w-full max-w-3xl mx-auto px-2">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center -mt-20 sm:-mt-28 md:-mt-36 w-full max-w-3xl mx-auto px-2">
         {/* ARH Metallic Logo Badge */}
-        <div className="mb-5 sm:mb-6 animate-fade-in">
+        <div className="mb-4 sm:mb-5 animate-fade-in">
           <ARHLogo size="md" />
         </div>
 
         {/* Dynamic Editorial Greeting */}
-        <div className="mb-7 sm:mb-9 text-center px-4">
+        <div className="mb-6 sm:mb-7 text-center px-4">
           <Greeting />
         </div>
 
