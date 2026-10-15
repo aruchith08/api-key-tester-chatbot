@@ -2,25 +2,27 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ARHLogo } from '../Home/ARHLogo';
 import { ChatModeToggle } from '../Navigation/ChatModeToggle';
-import { DualPanelLeft } from './DualPanelLeft';
-import { DualPanelRight } from './DualPanelRight';
 import { DualComposer } from './DualComposer';
 import { DualMessageItem } from './DualMessageItem';
 import { DualAutoChatBar } from './DualAutoChatBar';
+import { DualApiKeyModal } from './DualApiKeyModal';
 import { DualModelModal } from './DualModelModal';
 import { useDualChat } from '../../hooks/useDualChat';
+import { ProviderRegistry } from '../../providers/registry';
+import { ApiKeyStorage } from '../../services/apiKeyStorage';
+import type { StoredApiKey } from '../../types/storage';
 import { 
   KeyRound, 
   Database, 
   Info, 
-  Terminal, 
   Trash2, 
   Sparkles, 
-  PanelLeft, 
-  PanelRight,
   ArrowLeft,
   ArrowRight,
-  ArrowUp
+  ArrowUp,
+  CheckCircle2,
+  Zap,
+  Sliders
 } from 'lucide-react';
 
 export const DualChatWorkspace: React.FC = () => {
@@ -30,15 +32,25 @@ export const DualChatWorkspace: React.FC = () => {
     dualMessages,
     isDualGenerating,
     clearDualChat,
-    setApiKeyModalOpen,
     setKeyVaultOpen,
     storedKeys,
+    refreshStoredKeys,
     setAboutModalOpen,
-    setDeveloperModeOpen,
     dualProviderA,
     dualModelA,
+    dualApiKeyA,
     dualProviderB,
-    dualModelB
+    dualModelB,
+    dualApiKeyB,
+    setDualApiKeyA,
+    setDualApiKeyB,
+    setDualProviderA,
+    setDualProviderB,
+    setDualModelA,
+    setDualModelB,
+    setDualNameA,
+    setDualNameB,
+    showNotification
   } = useAppStore();
 
   const {
@@ -52,16 +64,93 @@ export const DualChatWorkspace: React.FC = () => {
     stopGeneration
   } = useDualChat();
 
-  const [activeModalSlot, setActiveModalSlot] = useState<'A' | 'B' | null>(null);
-  const [showLeftMobile, setShowLeftMobile] = useState(false);
-  const [showRightMobile, setShowRightMobile] = useState(false);
+  const [activeKeyModalSlot, setActiveKeyModalSlot] = useState<'A' | 'B' | null>(null);
+  const [activeModelModalSlot, setActiveModelModalSlot] = useState<'A' | 'B' | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const isConnected = Boolean(apiKey);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [dualMessages, isDualGenerating]);
+
+  // Check if Slot A has a key (explicit, stored, or active single-chat key)
+  const isSlotAConnected = Boolean(
+    dualProviderA && (
+      dualApiKeyA || 
+      storedKeys.some(k => k.providerId === dualProviderA.id) ||
+      (selectedProvider?.id === dualProviderA.id && apiKey)
+    )
+  );
+
+  // Check if Slot B has a key (explicit, stored, or active single-chat key)
+  const isSlotBConnected = Boolean(
+    dualProviderB && (
+      dualApiKeyB || 
+      storedKeys.some(k => k.providerId === dualProviderB.id) ||
+      (selectedProvider?.id === dualProviderB.id && apiKey)
+    )
+  );
+
+  // 1-Click quick connect a stored key to a slot
+  const handleQuickConnect = (slot: 'A' | 'B', item: StoredApiKey) => {
+    const provider = ProviderRegistry.getById(item.providerId);
+    if (!provider) return;
+
+    const models = ProviderRegistry.getCuratedModels(provider.id);
+    const chosenModel = models.find(m => m.id === provider.defaultModelId || m.isDefault) || models[0] || {
+      id: provider.defaultModelId || 'default',
+      name: provider.defaultModelId || `${provider.name} Default`,
+      provider: provider.name
+    };
+
+    if (slot === 'A') {
+      setDualApiKeyA(item.apiKey);
+      setDualProviderA(provider);
+      setDualModelA(chosenModel, provider);
+      setDualNameA(provider.name);
+    } else {
+      setDualApiKeyB(item.apiKey);
+      setDualProviderB(provider);
+      setDualModelB(chosenModel, provider);
+      setDualNameB(provider.name);
+    }
+
+    ApiKeyStorage.update(item.id, { lastUsedAt: Date.now() });
+    refreshStoredKeys();
+    showNotification(`Connected AI ${slot === 'A' ? '1' : '2'} to ${provider.name}!`);
+  };
+
+  // Safe send handlers that prompt to add key if missing
+  const handleSendAI1 = (text: string, atts?: any) => {
+    if (!isSlotAConnected) {
+      setActiveKeyModalSlot('A');
+      showNotification('Please add an API key for AI 1 first.');
+      return;
+    }
+    sendToAI1(text, atts);
+  };
+
+  const handleSendAI2 = (text: string, atts?: any) => {
+    if (!isSlotBConnected) {
+      setActiveKeyModalSlot('B');
+      showNotification('Please add an API key for AI 2 first.');
+      return;
+    }
+    sendToAI2(text, atts);
+  };
+
+  const handleSendBoth = (text: string, atts?: any) => {
+    if (!isSlotAConnected) {
+      setActiveKeyModalSlot('A');
+      showNotification('Please add an API key for AI 1 first.');
+      return;
+    }
+    if (!isSlotBConnected) {
+      setActiveKeyModalSlot('B');
+      showNotification('Please add an API key for AI 2 first.');
+      return;
+    }
+    sendToBoth(text, atts);
+  };
 
   const promptSuggestions = [
     {
@@ -99,40 +188,6 @@ export const DualChatWorkspace: React.FC = () => {
             <span className="font-medium hidden sm:inline">Dual AI Workspace</span>
             <span className="font-medium sm:hidden">Dual</span>
           </div>
-
-          {/* Mobile Panel Toggles */}
-          <div className="flex items-center gap-1 lg:hidden ml-1">
-            <button
-              type="button"
-              onClick={() => {
-                setShowLeftMobile(!showLeftMobile);
-                setShowRightMobile(false);
-              }}
-              className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
-                showLeftMobile 
-                  ? 'bg-blue-950/60 border-blue-500/50 text-blue-400' 
-                  : 'bg-[#141418] border-[#24242A] text-neutral-400 hover:text-white'
-              }`}
-              title="Toggle AI 1 Panel"
-            >
-              <PanelLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowRightMobile(!showRightMobile);
-                setShowLeftMobile(false);
-              }}
-              className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
-                showRightMobile 
-                  ? 'bg-pink-950/60 border-pink-500/50 text-pink-400' 
-                  : 'bg-[#141418] border-[#24242A] text-neutral-400 hover:text-white'
-              }`}
-              title="Toggle AI 2 Panel"
-            >
-              <PanelRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
 
         {/* Top-Center: Segmented Pill Switcher [ Chat | Dual ] */}
@@ -155,21 +210,6 @@ export const DualChatWorkspace: React.FC = () => {
               <span className="hidden lg:inline">Clear</span>
             </button>
           )}
-
-          {/* Add API Key */}
-          <button
-            type="button"
-            onClick={() => setApiKeyModalOpen(true)}
-            className="group flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-300 hover:text-white border border-[#242429] hover:border-[#35353C] rounded-xl text-xs sm:text-sm font-medium shadow-sm transition-all cursor-pointer"
-            title="Connect API Key"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-            <span className="hidden md:inline">{isConnected ? (selectedProvider?.name || 'Connected') : 'Add Key'}</span>
-            <span className="md:hidden">Key</span>
-            {isConnected && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            )}
-          </button>
 
           {/* Stored Keys Vault */}
           <button
@@ -195,135 +235,321 @@ export const DualChatWorkspace: React.FC = () => {
             <Info className="w-3.5 h-3.5 text-neutral-400" />
             <span className="hidden sm:inline">About</span>
           </button>
-
-          {/* Dev Mode */}
-          {isConnected && (
-            <button
-              type="button"
-              onClick={() => setDeveloperModeOpen(true)}
-              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-[#121215] hover:bg-[#1A1A1E] text-neutral-400 hover:text-neutral-200 border border-[#222226] rounded-xl text-xs transition-all cursor-pointer"
-              title="Open Developer Inspector"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       </header>
 
-      {/* 2. Main 3-Panel Layout */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Panel: AI 1 Configuration (Desktop fixed, Mobile overlay drawer) */}
-        <div className={`w-72 sm:w-80 shrink-0 h-full z-10 transition-transform lg:translate-x-0 ${
-          showLeftMobile 
-            ? 'absolute inset-y-0 left-0 shadow-2xl translate-x-0 bg-[#0C0D11]' 
-            : 'hidden lg:block'
-        }`}>
-          <DualPanelLeft onOpenModelModal={() => setActiveModalSlot('A')} />
+      {/* 2. Top Sleek Key Bar: AI 1 (Blue) | Auto Chat | AI 2 (Pink) */}
+      <div className="shrink-0 px-3 sm:px-6 py-2 border-b border-[#181820] bg-[#0A0A0E] flex flex-wrap items-center justify-between gap-2 z-40">
+        {/* AI 1 Quick Key Pill */}
+        <div className="flex items-center gap-2">
+          {isSlotAConnected ? (
+            <button
+              type="button"
+              onClick={() => setActiveKeyModalSlot('A')}
+              className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#0D121F] border border-blue-500/40 hover:border-blue-500 text-xs text-blue-200 transition-all cursor-pointer shadow-sm group"
+              title="Click to change AI 1 API key or provider"
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+              <span className="font-semibold text-white">AI 1:</span>
+              <span className="text-blue-300">{dualProviderA?.name}</span>
+              <span className="text-neutral-400 text-[11px] font-mono hidden md:inline">
+                ({dualModelA?.name || dualModelA?.id || 'Default'})
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveKeyModalSlot('A')}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-950/30 hover:bg-blue-950/60 border border-blue-500/40 hover:border-blue-500/80 text-blue-300 text-xs font-medium transition-all cursor-pointer shadow-sm group"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
+              <span>+ Add Key for AI 1</span>
+            </button>
+          )}
+
+          {/* Optional Model Selector for AI 1 */}
+          {isSlotAConnected && (
+            <button
+              type="button"
+              onClick={() => setActiveModelModalSlot('A')}
+              className="p-1 px-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 text-[11px] border border-[#222228] transition-colors cursor-pointer"
+              title="Change AI 1 Model"
+            >
+              <Sliders className="w-3 h-3 text-blue-400" />
+            </button>
+          )}
         </div>
 
-        {/* Center Panel: Shared Conversation + Auto Chat + Composer */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#08080A]">
-          {/* Top Auto AI-to-AI Conversation Bar */}
-          <div className="shrink-0 p-3 sm:px-6 pt-3 border-b border-[#181820]">
-            <DualAutoChatBar
-              onStart={() => startAutoConversation()}
-              onPause={pauseAutoConversation}
-              onResume={resumeAutoConversation}
-              onStop={stopAutoConversation}
-            />
-          </div>
+        {/* Center: Auto AI-to-AI Chat Bar */}
+        <div className="hidden sm:block">
+          <DualAutoChatBar
+            onStart={() => startAutoConversation()}
+            onPause={pauseAutoConversation}
+            onResume={resumeAutoConversation}
+            onStop={stopAutoConversation}
+          />
+        </div>
 
-          {/* Shared Transcript Body */}
-          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4">
-            {dualMessages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto px-4 text-center select-none py-10">
-                <div className="w-12 h-12 rounded-2xl bg-[#141418] border border-[#24242C] flex items-center justify-center mb-4 shadow-lg text-purple-400">
-                  <Sparkles className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  Dual AI Workspace
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-md leading-relaxed">
-                  Configure AI 1 (Blue) on the left and AI 2 (Pink) on the right. Send prompts to either AI individually, send to both simultaneously, or let them converse automatically.
-                </p>
+        {/* AI 2 Quick Key Pill */}
+        <div className="flex items-center gap-2">
+          {/* Optional Model Selector for AI 2 */}
+          {isSlotBConnected && (
+            <button
+              type="button"
+              onClick={() => setActiveModelModalSlot('B')}
+              className="p-1 px-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 text-[11px] border border-[#222228] transition-colors cursor-pointer"
+              title="Change AI 2 Model"
+            >
+              <Sliders className="w-3 h-3 text-pink-400" />
+            </button>
+          )}
 
-                {/* Quick Action Hint */}
-                <div className="flex items-center gap-3 mt-4 text-[11px] text-neutral-500 font-mono">
-                  <span className="flex items-center gap-1 text-blue-400">
-                    <ArrowLeft className="w-3.5 h-3.5" /> AI 1
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1 text-purple-400">
-                    <ArrowUp className="w-3.5 h-3.5" /> Both
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1 text-pink-400">
-                    <ArrowRight className="w-3.5 h-3.5" /> AI 2
-                  </span>
-                </div>
-
-                {/* Prompt Starter Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-6">
-                  {promptSuggestions.map((item, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => sendToBoth(item.prompt)}
-                      className="flex flex-col text-left p-3 rounded-xl bg-[#121216] hover:bg-[#1A1A20] border border-[#22222A] hover:border-neutral-600 transition-all cursor-pointer group"
-                    >
-                      <span className="text-xs font-semibold text-neutral-200 group-hover:text-purple-400 transition-colors">
-                        {item.title}
-                      </span>
-                      <span className="text-[11px] text-neutral-400 mt-1 line-clamp-2">
-                        {item.prompt}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 pb-6">
-                {dualMessages.map((msg, idx) => (
-                  <DualMessageItem
-                    key={msg.id}
-                    message={msg}
-                    isLatest={idx === dualMessages.length - 1}
-                  />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Composer with the 3 Arrow-Only Buttons */}
-          <footer className="shrink-0 p-3 sm:p-4 max-w-4xl w-full mx-auto">
-            <DualComposer
-              onSendAI1={(text, atts) => sendToAI1(text, atts)}
-              onSendBoth={(text, atts) => sendToBoth(text, atts)}
-              onSendAI2={(text, atts) => sendToAI2(text, atts)}
-              onStop={stopGeneration}
-              isGenerating={isDualGenerating}
-            />
-          </footer>
-        </main>
-
-        {/* Right Panel: AI 2 Configuration (Desktop fixed, Mobile overlay drawer) */}
-        <div className={`w-72 sm:w-80 shrink-0 h-full z-10 transition-transform lg:translate-x-0 ${
-          showRightMobile 
-            ? 'absolute inset-y-0 right-0 shadow-2xl translate-x-0 bg-[#0D0B0E]' 
-            : 'hidden lg:block'
-        }`}>
-          <DualPanelRight onOpenModelModal={() => setActiveModalSlot('B')} />
+          {isSlotBConnected ? (
+            <button
+              type="button"
+              onClick={() => setActiveKeyModalSlot('B')}
+              className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#1C0D17] border border-pink-500/40 hover:border-pink-500 text-xs text-pink-200 transition-all cursor-pointer shadow-sm group"
+              title="Click to change AI 2 API key or provider"
+            >
+              <span className="w-2 h-2 rounded-full bg-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
+              <span className="font-semibold text-white">AI 2:</span>
+              <span className="text-pink-300">{dualProviderB?.name}</span>
+              <span className="text-neutral-400 text-[11px] font-mono hidden md:inline">
+                ({dualModelB?.name || dualModelB?.id || 'Default'})
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActiveKeyModalSlot('B')}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-950/30 hover:bg-pink-950/60 border border-pink-500/40 hover:border-pink-500/80 text-pink-300 text-xs font-medium transition-all cursor-pointer shadow-sm group"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-pink-400 group-hover:scale-110 transition-transform" />
+              <span>+ Add Key for AI 2</span>
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Mobile Auto Chat Bar */}
+      <div className="sm:hidden px-3 py-1.5 bg-[#0A0A0E] border-b border-[#181820]">
+        <DualAutoChatBar
+          onStart={() => startAutoConversation()}
+          onPause={pauseAutoConversation}
+          onResume={resumeAutoConversation}
+          onStop={stopAutoConversation}
+        />
+      </div>
+
+      {/* 3. Main Full-Width Conversation & Hero Layout */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#08080A]">
+        {/* Shared Transcript Body */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4 max-w-5xl w-full mx-auto">
+          {dualMessages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto px-4 text-center select-none py-6 sm:py-10">
+              <div className="w-12 h-12 rounded-2xl bg-[#141418] border border-[#24242C] flex items-center justify-center mb-4 shadow-lg text-purple-400">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                Dual AI Workspace
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-md leading-relaxed">
+                Simply add an API key for AI 1 and AI 2 to compare responses side-by-side or run automatic AI-to-AI conversations.
+              </p>
+
+              {/* Two Simple Add API Key Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-6">
+                {/* AI 1 Card */}
+                <div className="p-4 rounded-2xl bg-[#0D101A] border border-blue-500/30 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                    <span className="font-semibold text-sm text-white">AI 1 (Blue)</span>
+                  </div>
+
+                  {isSlotAConnected ? (
+                    <div className="space-y-1.5 my-2">
+                      <div className="flex items-center gap-1.5 text-xs text-blue-300 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Connected to {dualProviderA?.name}</span>
+                      </div>
+                      <div className="text-[11px] text-neutral-400 font-mono">
+                        {dualModelA?.name || dualModelA?.id || 'Default Model'}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveKeyModalSlot('A')}
+                        className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer mt-1"
+                      >
+                        Change Key or Provider
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full space-y-2.5 my-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveKeyModalSlot('A')}
+                        className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-900/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>+ Add API Key for AI 1</span>
+                      </button>
+
+                      {/* Quick 1-click pills if stored keys exist */}
+                      {storedKeys.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                          <span className="text-[10px] text-neutral-500">Saved:</span>
+                          {storedKeys.slice(0, 3).map((k) => (
+                            <button
+                              key={k.id}
+                              type="button"
+                              onClick={() => handleQuickConnect('A', k)}
+                              className="px-2 py-0.5 rounded-md bg-[#161A26] hover:bg-blue-900/40 text-[10px] text-neutral-300 hover:text-blue-300 border border-[#272F45] transition-colors cursor-pointer"
+                              title={`Connect ${k.name || k.providerId}`}
+                            >
+                              ⚡ {k.name || k.providerId}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI 2 Card */}
+                <div className="p-4 rounded-2xl bg-[#180F16] border border-pink-500/30 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
+                    <span className="font-semibold text-sm text-white">AI 2 (Pink)</span>
+                  </div>
+
+                  {isSlotBConnected ? (
+                    <div className="space-y-1.5 my-2">
+                      <div className="flex items-center gap-1.5 text-xs text-pink-300 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-pink-400" />
+                        <span>Connected to {dualProviderB?.name}</span>
+                      </div>
+                      <div className="text-[11px] text-neutral-400 font-mono">
+                        {dualModelB?.name || dualModelB?.id || 'Default Model'}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveKeyModalSlot('B')}
+                        className="text-xs text-neutral-400 hover:text-white underline underline-offset-2 transition-colors cursor-pointer mt-1"
+                      >
+                        Change Key or Provider
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-full space-y-2.5 my-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveKeyModalSlot('B')}
+                        className="w-full py-2 px-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold shadow-lg shadow-pink-900/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        <span>+ Add API Key for AI 2</span>
+                      </button>
+
+                      {/* Quick 1-click pills if stored keys exist */}
+                      {storedKeys.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                          <span className="text-[10px] text-neutral-500">Saved:</span>
+                          {storedKeys.slice(0, 3).map((k) => (
+                            <button
+                              key={k.id}
+                              type="button"
+                              onClick={() => handleQuickConnect('B', k)}
+                              className="px-2 py-0.5 rounded-md bg-[#241722] hover:bg-pink-900/40 text-[10px] text-neutral-300 hover:text-pink-300 border border-[#3E273A] transition-colors cursor-pointer"
+                              title={`Connect ${k.name || k.providerId}`}
+                            >
+                              ⚡ {k.name || k.providerId}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Action Hint */}
+              <div className="flex items-center gap-3 mt-5 text-[11px] text-neutral-500 font-mono">
+                <span className="flex items-center gap-1 text-blue-400">
+                  <ArrowLeft className="w-3.5 h-3.5" /> AI 1
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-purple-400">
+                  <ArrowUp className="w-3.5 h-3.5" /> Both
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-pink-400">
+                  <ArrowRight className="w-3.5 h-3.5" /> AI 2
+                </span>
+              </div>
+
+              {/* Prompt Starter Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-5">
+                {promptSuggestions.map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendBoth(item.prompt)}
+                    className="flex flex-col text-left p-3 rounded-xl bg-[#121216] hover:bg-[#1A1A20] border border-[#22222A] hover:border-neutral-600 transition-all cursor-pointer group"
+                  >
+                    <span className="text-xs font-semibold text-neutral-200 group-hover:text-purple-400 transition-colors">
+                      {item.title}
+                    </span>
+                    <span className="text-[11px] text-neutral-400 mt-1 line-clamp-2">
+                      {item.prompt}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pb-6">
+              {dualMessages.map((msg, idx) => (
+                <DualMessageItem
+                  key={msg.id}
+                  message={msg}
+                  isLatest={idx === dualMessages.length - 1}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Composer with the 3 Arrow-Only Buttons */}
+        <footer className="shrink-0 p-3 sm:p-4 max-w-4xl w-full mx-auto">
+          <DualComposer
+            onSendAI1={handleSendAI1}
+            onSendBoth={handleSendBoth}
+            onSendAI2={handleSendAI2}
+            onStop={stopGeneration}
+            isGenerating={isDualGenerating}
+          />
+        </footer>
+      </main>
+
+      {/* Dual API Key Modal (Slot A or Slot B) */}
+      {activeKeyModalSlot && (
+        <DualApiKeyModal
+          slot={activeKeyModalSlot}
+          onClose={() => setActiveKeyModalSlot(null)}
+          onOpenModelModal={() => setActiveModelModalSlot(activeKeyModalSlot)}
+        />
+      )}
+
       {/* Dual Model Selection Modal */}
-      {activeModalSlot && (
+      {activeModelModalSlot && (
         <DualModelModal
-          slot={activeModalSlot}
-          onClose={() => setActiveModalSlot(null)}
+          slot={activeModelModalSlot}
+          onClose={() => setActiveModelModalSlot(null)}
         />
       )}
     </div>
   );
 };
+
+export default DualChatWorkspace;
