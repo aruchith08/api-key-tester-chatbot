@@ -32,13 +32,15 @@ export function App() {
       )}
 
       {/* Main View: Dual Chat Workspace OR Single AI Home/Conversation */}
-      {activeChatTab === 'dual' ? (
-        <DualChatWorkspace />
-      ) : !isConversationActive ? (
-        <HomeScreen onSendMessage={sendMessage} />
-      ) : (
-        <ChatConversation onSendMessage={sendMessage} onRegenerate={regenerate} />
-      )}
+      <div key={activeChatTab} className="min-h-screen w-full animate-fade-in">
+        {activeChatTab === 'dual' ? (
+          <DualChatWorkspace />
+        ) : !isConversationActive ? (
+          <HomeScreen onSendMessage={sendMessage} />
+        ) : (
+          <ChatConversation onSendMessage={sendMessage} onRegenerate={regenerate} />
+        )}
+      </div>
 
       {/* Modals & Drawers */}
       <AddApiKeyModal />
