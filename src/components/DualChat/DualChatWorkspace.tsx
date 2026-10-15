@@ -2,13 +2,26 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ARHLogo } from '../Home/ARHLogo';
 import { ChatModeToggle } from '../Navigation/ChatModeToggle';
-import { DualConfigBar } from './DualConfigBar';
-import { DualMessageComparison } from './DualMessageComparison';
+import { DualPanelLeft } from './DualPanelLeft';
+import { DualPanelRight } from './DualPanelRight';
+import { DualComposer } from './DualComposer';
+import { DualMessageItem } from './DualMessageItem';
+import { DualAutoChatBar } from './DualAutoChatBar';
 import { DualModelModal } from './DualModelModal';
-import { ChatInput } from '../Chat/ChatInput';
 import { useDualChat } from '../../hooks/useDualChat';
-import { Atom, KeyRound, Database, Info, Terminal, Trash2, RotateCcw, Sparkles } from 'lucide-react';
-import type { MessageAttachment } from '../../types/chat';
+import { 
+  KeyRound, 
+  Database, 
+  Info, 
+  Terminal, 
+  Trash2, 
+  Sparkles, 
+  PanelLeft, 
+  PanelRight,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp
+} from 'lucide-react';
 
 export const DualChatWorkspace: React.FC = () => {
   const {
@@ -21,11 +34,27 @@ export const DualChatWorkspace: React.FC = () => {
     setKeyVaultOpen,
     storedKeys,
     setAboutModalOpen,
-    setDeveloperModeOpen
+    setDeveloperModeOpen,
+    dualProviderA,
+    dualModelA,
+    dualProviderB,
+    dualModelB
   } = useAppStore();
 
-  const { sendMessage, regenerate, stopGeneration } = useDualChat();
+  const {
+    sendToAI1,
+    sendToAI2,
+    sendToBoth,
+    startAutoConversation,
+    pauseAutoConversation,
+    resumeAutoConversation,
+    stopAutoConversation,
+    stopGeneration
+  } = useDualChat();
+
   const [activeModalSlot, setActiveModalSlot] = useState<'A' | 'B' | null>(null);
+  const [showLeftMobile, setShowLeftMobile] = useState(false);
+  const [showRightMobile, setShowRightMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isConnected = Boolean(apiKey);
@@ -51,14 +80,14 @@ export const DualChatWorkspace: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-[#08080A] text-[#EDEDED] select-none overflow-hidden">
-      {/* Top Header Bar */}
+      {/* 1. Universal Top Header Bar */}
       <header className="shrink-0 grid grid-cols-[1fr_auto_1fr] items-center px-3 sm:px-6 py-2.5 border-b border-[#1C1C20] bg-[#08080A]/95 backdrop-blur-md z-20 gap-2">
-        {/* Top-Left: ARH Logo & Mode tag */}
+        {/* Top-Left: ARH Logo & Subtitle */}
         <div className="justify-self-start flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div 
             className="flex items-center cursor-pointer transition-opacity hover:opacity-90"
             onClick={() => window.location.reload()}
-            title="ARH Playground"
+            title="ARH"
           >
             <ARHLogo size="xs" />
           </div>
@@ -66,9 +95,43 @@ export const DualChatWorkspace: React.FC = () => {
           <div className="h-4 w-px bg-neutral-800 hidden xs:block" />
 
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#141418] border border-[#24242A] text-xs text-neutral-300">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
-            <span className="font-medium hidden sm:inline">Dual AI Benchmark</span>
+            <Sparkles className="w-3 h-3 text-purple-400" />
+            <span className="font-medium hidden sm:inline">Dual AI Workspace</span>
             <span className="font-medium sm:hidden">Dual</span>
+          </div>
+
+          {/* Mobile Panel Toggles */}
+          <div className="flex items-center gap-1 lg:hidden ml-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLeftMobile(!showLeftMobile);
+                setShowRightMobile(false);
+              }}
+              className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+                showLeftMobile 
+                  ? 'bg-blue-950/60 border-blue-500/50 text-blue-400' 
+                  : 'bg-[#141418] border-[#24242A] text-neutral-400 hover:text-white'
+              }`}
+              title="Toggle AI 1 Panel"
+            >
+              <PanelLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowRightMobile(!showRightMobile);
+                setShowLeftMobile(false);
+              }}
+              className={`p-1.5 rounded-lg border text-xs transition-colors cursor-pointer ${
+                showRightMobile 
+                  ? 'bg-pink-950/60 border-pink-500/50 text-pink-400' 
+                  : 'bg-[#141418] border-[#24242A] text-neutral-400 hover:text-white'
+              }`}
+              title="Toggle AI 2 Panel"
+            >
+              <PanelRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -81,29 +144,16 @@ export const DualChatWorkspace: React.FC = () => {
         <div className="justify-self-end flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Clear Dual Chat if messages exist */}
           {dualMessages.length > 0 && (
-            <>
-              <button
-                type="button"
-                onClick={regenerate}
-                disabled={isDualGenerating}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 hover:bg-white/5 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
-                title="Regenerate dual responses"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Regenerate</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={clearDualChat}
-                disabled={isDualGenerating}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
-                title="Clear dual conversation"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Clear</span>
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={clearDualChat}
+              disabled={isDualGenerating}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors disabled:opacity-30 cursor-pointer"
+              title="Clear dual conversation"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Clear</span>
+            </button>
           )}
 
           {/* Add API Key */}
@@ -160,67 +210,112 @@ export const DualChatWorkspace: React.FC = () => {
         </div>
       </header>
 
-      {/* Two AI Configuration Panels */}
-      <div className="shrink-0 border-b border-[#1A1A20] bg-[#0A0A0D]">
-        <DualConfigBar onOpenModelModal={(slot) => setActiveModalSlot(slot)} />
+      {/* 2. Main 3-Panel Layout */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Panel: AI 1 Configuration (Desktop fixed, Mobile overlay drawer) */}
+        <div className={`w-72 sm:w-80 shrink-0 h-full z-10 transition-transform lg:translate-x-0 ${
+          showLeftMobile 
+            ? 'absolute inset-y-0 left-0 shadow-2xl translate-x-0 bg-[#0C0D11]' 
+            : 'hidden lg:block'
+        }`}>
+          <DualPanelLeft onOpenModelModal={() => setActiveModalSlot('A')} />
+        </div>
+
+        {/* Center Panel: Shared Conversation + Auto Chat + Composer */}
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#08080A]">
+          {/* Top Auto AI-to-AI Conversation Bar */}
+          <div className="shrink-0 p-3 sm:px-6 pt-3 border-b border-[#181820]">
+            <DualAutoChatBar
+              onStart={() => startAutoConversation()}
+              onPause={pauseAutoConversation}
+              onResume={resumeAutoConversation}
+              onStop={stopAutoConversation}
+            />
+          </div>
+
+          {/* Shared Transcript Body */}
+          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4">
+            {dualMessages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto px-4 text-center select-none py-10">
+                <div className="w-12 h-12 rounded-2xl bg-[#141418] border border-[#24242C] flex items-center justify-center mb-4 shadow-lg text-purple-400">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  Dual AI Workspace
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-md leading-relaxed">
+                  Configure AI 1 (Blue) on the left and AI 2 (Pink) on the right. Send prompts to either AI individually, send to both simultaneously, or let them converse automatically.
+                </p>
+
+                {/* Quick Action Hint */}
+                <div className="flex items-center gap-3 mt-4 text-[11px] text-neutral-500 font-mono">
+                  <span className="flex items-center gap-1 text-blue-400">
+                    <ArrowLeft className="w-3.5 h-3.5" /> AI 1
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 text-purple-400">
+                    <ArrowUp className="w-3.5 h-3.5" /> Both
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 text-pink-400">
+                    <ArrowRight className="w-3.5 h-3.5" /> AI 2
+                  </span>
+                </div>
+
+                {/* Prompt Starter Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-6">
+                  {promptSuggestions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => sendToBoth(item.prompt)}
+                      className="flex flex-col text-left p-3 rounded-xl bg-[#121216] hover:bg-[#1A1A20] border border-[#22222A] hover:border-neutral-600 transition-all cursor-pointer group"
+                    >
+                      <span className="text-xs font-semibold text-neutral-200 group-hover:text-purple-400 transition-colors">
+                        {item.title}
+                      </span>
+                      <span className="text-[11px] text-neutral-400 mt-1 line-clamp-2">
+                        {item.prompt}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-6">
+                {dualMessages.map((msg, idx) => (
+                  <DualMessageItem
+                    key={msg.id}
+                    message={msg}
+                    isLatest={idx === dualMessages.length - 1}
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Composer with the 3 Arrow-Only Buttons */}
+          <footer className="shrink-0 p-3 sm:p-4 max-w-4xl w-full mx-auto">
+            <DualComposer
+              onSendAI1={(text, atts) => sendToAI1(text, atts)}
+              onSendBoth={(text, atts) => sendToBoth(text, atts)}
+              onSendAI2={(text, atts) => sendToAI2(text, atts)}
+              onStop={stopGeneration}
+              isGenerating={isDualGenerating}
+            />
+          </footer>
+        </main>
+
+        {/* Right Panel: AI 2 Configuration (Desktop fixed, Mobile overlay drawer) */}
+        <div className={`w-72 sm:w-80 shrink-0 h-full z-10 transition-transform lg:translate-x-0 ${
+          showRightMobile 
+            ? 'absolute inset-y-0 right-0 shadow-2xl translate-x-0 bg-[#0D0B0E]' 
+            : 'hidden lg:block'
+        }`}>
+          <DualPanelRight onOpenModelModal={() => setActiveModalSlot('B')} />
+        </div>
       </div>
-
-      {/* Main Conversation & Comparison Body */}
-      <main className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 space-y-4">
-        {dualMessages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto px-4 text-center select-none py-12">
-            <div className="w-12 h-12 rounded-2xl bg-[#141418] border border-[#24242C] flex items-center justify-center mb-4 shadow-lg text-emerald-400">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Dual AI Model Benchmark
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-lg leading-relaxed">
-              Prompt two AI models simultaneously to compare output quality, reasoning depth, latency, and code accuracy side-by-side.
-            </p>
-
-            {/* Prompt Starter Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full mt-8">
-              {promptSuggestions.map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => sendMessage(item.prompt)}
-                  className="flex flex-col text-left p-3 rounded-xl bg-[#121216] hover:bg-[#1A1A20] border border-[#22222A] hover:border-neutral-600 transition-all cursor-pointer group"
-                >
-                  <span className="text-xs font-semibold text-neutral-200 group-hover:text-emerald-400 transition-colors">
-                    {item.title}
-                  </span>
-                  <span className="text-[11px] text-neutral-400 mt-1 line-clamp-2">
-                    {item.prompt}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 pb-6">
-            {dualMessages.map((msg, idx) => (
-              <DualMessageComparison
-                key={msg.id}
-                message={msg}
-                isLatest={idx === dualMessages.length - 1}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </main>
-
-      {/* Shared Bottom Input */}
-      <footer className="shrink-0 p-3 sm:p-5 max-w-4xl w-full mx-auto">
-        <ChatInput
-          onSendMessage={(text, atts) => sendMessage(text, atts)}
-          isGenerating={isDualGenerating}
-          onStop={stopGeneration}
-          placeholder="Send a prompt to benchmark Model A and Model B simultaneously..."
-        />
-      </footer>
 
       {/* Dual Model Selection Modal */}
       {activeModalSlot && (

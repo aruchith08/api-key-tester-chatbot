@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useAppStore } from '../store/appStore';
 import { ProviderRegistry } from '../providers/registry';
 import { ApiKeyStorage } from '../services/apiKeyStorage';
@@ -9,40 +9,49 @@ export function useDualChat() {
   const {
     apiKey,
     selectedProvider,
-    selectedModel,
     dualModelA,
     dualModelB,
     dualProviderA,
     dualProviderB,
+    dualApiKeyA,
+    dualApiKeyB,
+    dualNameA,
+    dualNameB,
+    dualSystemPromptA,
+    dualSystemPromptB,
+    dualTemperatureA,
+    dualTemperatureB,
     dualMessages,
     isDualGenerating,
-    addDualMessagePlaceholder,
-    updateDualResponseA,
-    updateDualResponseB,
+    autoChatState,
+    autoChatTurnLimit,
+    autoChatCurrentTurn,
+    addDualUserMessage,
+    addDualSlotPlaceholder,
+    updateDualMessage,
     setDualGenerating,
     stopDualGeneration,
+    setAutoChatState,
+    setAutoChatCurrentTurn,
+    clearDualChat,
     showNotification
   } = useAppStore();
 
+  const activeAbortControllerRef = useRef<AbortController | null>(null);
+
   const resolveSlotContext = useCallback((slot: 'A' | 'B') => {
-    const provider = slot === 'A' 
-      ? (dualProviderA || selectedProvider) 
-      : (dualProviderB || selectedProvider);
+    const provider = slot === 'A' ? dualProviderA : dualProviderB;
+    const model = slot === 'A' ? dualModelA : dualModelB;
+    const displayName = slot === 'A' ? (dualNameA || 'AI 1') : (dualNameB || 'AI 2');
+    const systemPrompt = slot === 'A' ? dualSystemPromptA : dualSystemPromptB;
+    const temperature = slot === 'A' ? dualTemperatureA : dualTemperatureB;
 
-    const model = slot === 'A' 
-      ? (dualModelA || selectedModel) 
-      : (dualModelB || selectedModel);
-
-    // Determine the best API key for this provider
-    let keyToUse = '';
-    if (provider?.id && selectedProvider?.id === provider.id && apiKey) {
-      keyToUse = apiKey;
-    } else if (provider?.id) {
+    let keyToUse = slot === 'A' ? dualApiKeyA : dualApiKeyB;
+    if (!keyToUse && provider?.id) {
       const storedKey = ApiKeyStorage.getAll().find(k => k.providerId === provider.id);
       if (storedKey) {
         keyToUse = storedKey.apiKey;
-      } else if (apiKey) {
-        // Fallback to active key if same or custom
+      } else if (selectedProvider?.id === provider.id && apiKey) {
         keyToUse = apiKey;
       }
     }
@@ -50,69 +59,155 @@ export function useDualChat() {
     return {
       provider,
       model,
+      displayName,
+      systemPrompt,
+      temperature,
       apiKey: keyToUse
     };
-  }, [apiKey, selectedProvider, selectedModel, dualModelA, dualModelB, dualProviderA, dualProviderB]);
+  }, [
+    dualProviderA,
+    dualProviderB,
+    dualModelA,
+    dualModelB,
+    dualNameA,
+    dualNameB,
+    dualSystemPromptA,
+    dualSystemPromptB,
+    dualTemperatureA,
+    dualTemperatureB,
+    dualApiKeyA,
+    dualApiKeyB,
+    selectedProvider,
+    apiKey
+  ]);
 
-  const streamSingleSlot = useCallback(async (
-    slot: 'A' | 'B',
-    messageId: string,
-    prompt: string,
-    attachments: MessageAttachment[] = [],
-    signal: AbortSignal
-  ) => {
-    const { provider, model, apiKey: slotApiKey } = resolveSlotContext(slot);
-    const updateResponse = slot === 'A' ? updateDualResponseA : updateDualResponseB;
-
-    if (!provider) {
-      updateResponse(messageId, {
-        error: `Provider for Model ${slot} is not configured. Please select a provider.`,
-        isStreaming: false
-      });
-      return;
-    }
-
-    if (!slotApiKey && provider.id !== 'custom') {
-      updateResponse(messageId, {
-        error: `No API key found for ${provider.name}. Please connect a key in Add API Key or Stored Keys.`,
-        isStreaming: false
-      });
-      return;
-    }
-
-    const adapter = ProviderRegistry.resolveAdapter(provider);
-    const targetModelId = getRuntimeModelId(model, provider.defaultModelId || 'default');
-
-    // Build chat context for this model
-    // Convert previous dual messages to conversational history for this slot
+  const buildHistoryForSlot = useCallback((slot: 'A' | 'B', extraUserPrompt?: string, extraAttachments: MessageAttachment[] = []) => {
+    const { systemPrompt } = resolveSlotContext(slot);
     const history: ChatMessage[] = [];
-    dualMessages.forEach((dm) => {
+
+    if (systemPrompt && systemPrompt.trim()) {
       history.push({
-        id: dm.id + '_user',
-        role: 'user',
-        content: dm.userPrompt,
-        attachments: dm.attachments,
-        timestamp: dm.timestamp
+        id: 'sys_' + slot,
+        role: 'system',
+        content: systemPrompt.trim(),
+        timestamp: 0
       });
-      const priorResponse = slot === 'A' ? dm.responseA : dm.responseB;
-      if (priorResponse.content && !priorResponse.error) {
+    }
+
+    dualMessages.forEach((msg) => {
+      if (msg.role === 'user') {
         history.push({
-          id: dm.id + '_assistant',
-          role: 'assistant',
-          content: priorResponse.content,
-          timestamp: dm.timestamp + 1
+          id: msg.id,
+          role: 'user',
+          content: msg.content || msg.userPrompt || '',
+          attachments: msg.attachments,
+          timestamp: msg.timestamp
         });
+      } else if ((slot === 'A' && msg.role === 'ai1') || (slot === 'B' && msg.role === 'ai2')) {
+        if (msg.content && !msg.error) {
+          history.push({
+            id: msg.id,
+            role: 'assistant',
+            content: msg.content,
+            timestamp: msg.timestamp
+          });
+        }
+      } else {
+        // Opposing AI's turn from this AI's perspective
+        if (msg.content && !msg.error) {
+          const speaker = msg.senderName || (msg.role === 'ai1' ? 'AI 1' : 'AI 2');
+          history.push({
+            id: msg.id,
+            role: 'user',
+            content: `[${speaker}]: ${msg.content}`,
+            timestamp: msg.timestamp
+          });
+        }
       }
     });
 
-    // Add current user prompt
-    history.push({
-      id: messageId + '_user',
-      role: 'user',
-      content: prompt,
-      attachments,
-      timestamp: Date.now()
-    });
+    if (extraUserPrompt && extraUserPrompt.trim()) {
+      history.push({
+        id: 'user_extra_' + Date.now(),
+        role: 'user',
+        content: extraUserPrompt.trim(),
+        attachments: extraAttachments,
+        timestamp: Date.now()
+      });
+    }
+
+    return history;
+  }, [dualMessages, resolveSlotContext]);
+
+  const streamSlot = useCallback(async (
+    slot: 'A' | 'B',
+    signal: AbortSignal,
+    overrideHistory?: ChatMessage[]
+  ): Promise<boolean> => {
+    const { provider, model, displayName, apiKey: slotApiKey, temperature } = resolveSlotContext(slot);
+    const role = slot === 'A' ? 'ai1' : 'ai2';
+
+    if (!provider) {
+      addDualSlotPlaceholder(
+        role,
+        displayName,
+        undefined,
+        undefined
+      );
+      const lastId = useAppStore.getState().dualMessages[useAppStore.getState().dualMessages.length - 1]?.id;
+      if (lastId) {
+        updateDualMessage(lastId, {
+          error: `Please select a provider for ${displayName}.`,
+          isStreaming: false
+        });
+      }
+      return false;
+    }
+
+    if (!model) {
+      addDualSlotPlaceholder(
+        role,
+        displayName,
+        undefined,
+        provider.name
+      );
+      const lastId = useAppStore.getState().dualMessages[useAppStore.getState().dualMessages.length - 1]?.id;
+      if (lastId) {
+        updateDualMessage(lastId, {
+          error: `Please select a model for ${displayName} (${provider.name}).`,
+          isStreaming: false
+        });
+      }
+      return false;
+    }
+
+    if (!slotApiKey && provider.id !== 'custom') {
+      addDualSlotPlaceholder(
+        role,
+        displayName,
+        model.name || model.id,
+        provider.name
+      );
+      const lastId = useAppStore.getState().dualMessages[useAppStore.getState().dualMessages.length - 1]?.id;
+      if (lastId) {
+        updateDualMessage(lastId, {
+          error: `No API key found for ${provider.name}. Please enter a key in the ${displayName} panel or Add API Key.`,
+          isStreaming: false
+        });
+      }
+      return false;
+    }
+
+    const placeholderId = addDualSlotPlaceholder(
+      role,
+      displayName,
+      model.name || model.id,
+      provider.name
+    );
+
+    const adapter = ProviderRegistry.resolveAdapter(provider);
+    const targetModelId = getRuntimeModelId(model, provider.defaultModelId || 'default');
+    const messages = overrideHistory || buildHistoryForSlot(slot);
 
     const startTime = Date.now();
     let ttftRecorded = false;
@@ -122,9 +217,10 @@ export function useDualChat() {
 
     try {
       const stream = adapter.streamChat({
-        apiKey: slotApiKey,
+        apiKey: slotApiKey || '',
         model: targetModelId,
-        messages: history,
+        messages,
+        temperature,
         signal,
         onMetrics: (metrics) => {
           if (metrics.ttftMs && !ttftRecorded) {
@@ -152,7 +248,7 @@ export function useDualChat() {
           accumulated = chunk.content;
         }
 
-        updateResponse(messageId, {
+        updateDualMessage(placeholderId, {
           content: accumulated,
           thinking: accumulatedThinking || undefined,
           isStreaming: true,
@@ -164,7 +260,7 @@ export function useDualChat() {
       }
 
       const totalDurationMs = Date.now() - startTime;
-      updateResponse(messageId, {
+      updateDualMessage(placeholderId, {
         content: accumulated,
         thinking: accumulatedThinking || undefined,
         isStreaming: false,
@@ -173,91 +269,209 @@ export function useDualChat() {
           totalDurationMs
         }
       });
+      return true;
     } catch (err: any) {
       if (signal.aborted) {
-        updateResponse(messageId, { isStreaming: false });
-        return;
+        updateDualMessage(placeholderId, { isStreaming: false });
+        return false;
       }
       const errMsg = err?.message || err?.error?.message || 'Error generating response';
-      updateResponse(messageId, {
+      updateDualMessage(placeholderId, {
         error: errMsg,
         isStreaming: false,
         metrics: {
           totalDurationMs: Date.now() - startTime
         }
       });
+      return false;
     }
-  }, [resolveSlotContext, dualMessages, updateDualResponseA, updateDualResponseB]);
+  }, [
+    resolveSlotContext,
+    addDualSlotPlaceholder,
+    updateDualMessage,
+    buildHistoryForSlot
+  ]);
 
-  const sendMessage = useCallback(async (prompt: string, attachments: MessageAttachment[] = []) => {
+  // 1. Send to AI 1 only
+  const sendToAI1 = useCallback(async (prompt: string, attachments: MessageAttachment[] = []) => {
     if (!prompt.trim() && attachments.length === 0) return;
     if (isDualGenerating) return;
 
-    const messageId = addDualMessagePlaceholder(prompt, attachments);
+    if (autoChatState === 'running') {
+      setAutoChatState('idle');
+    }
+
+    addDualUserMessage(prompt, 'ai1', attachments);
     const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
+    setDualGenerating(true, controller);
+
+    try {
+      await streamSlot('A', controller.signal);
+    } finally {
+      setDualGenerating(false, null);
+      activeAbortControllerRef.current = null;
+    }
+  }, [isDualGenerating, autoChatState, setAutoChatState, addDualUserMessage, setDualGenerating, streamSlot]);
+
+  // 2. Send to AI 2 only
+  const sendToAI2 = useCallback(async (prompt: string, attachments: MessageAttachment[] = []) => {
+    if (!prompt.trim() && attachments.length === 0) return;
+    if (isDualGenerating) return;
+
+    if (autoChatState === 'running') {
+      setAutoChatState('idle');
+    }
+
+    addDualUserMessage(prompt, 'ai2', attachments);
+    const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
+    setDualGenerating(true, controller);
+
+    try {
+      await streamSlot('B', controller.signal);
+    } finally {
+      setDualGenerating(false, null);
+      activeAbortControllerRef.current = null;
+    }
+  }, [isDualGenerating, autoChatState, setAutoChatState, addDualUserMessage, setDualGenerating, streamSlot]);
+
+  // 3. Send to both AIs independently in parallel
+  const sendToBoth = useCallback(async (prompt: string, attachments: MessageAttachment[] = []) => {
+    if (!prompt.trim() && attachments.length === 0) return;
+    if (isDualGenerating) return;
+
+    if (autoChatState === 'running') {
+      setAutoChatState('idle');
+    }
+
+    addDualUserMessage(prompt, 'both', attachments);
+    const controller = new AbortController();
+    activeAbortControllerRef.current = controller;
     setDualGenerating(true, controller);
 
     try {
       await Promise.allSettled([
-        streamSingleSlot('A', messageId, prompt, attachments, controller.signal),
-        streamSingleSlot('B', messageId, prompt, attachments, controller.signal)
+        streamSlot('A', controller.signal),
+        streamSlot('B', controller.signal)
       ]);
     } finally {
       setDualGenerating(false, null);
+      activeAbortControllerRef.current = null;
     }
-  }, [isDualGenerating, addDualMessagePlaceholder, setDualGenerating, streamSingleSlot]);
+  }, [isDualGenerating, autoChatState, setAutoChatState, addDualUserMessage, setDualGenerating, streamSlot]);
 
-  const regenerate = useCallback(async () => {
-    if (dualMessages.length === 0 || isDualGenerating) return;
-    const lastMsg = dualMessages[dualMessages.length - 1];
-    if (!lastMsg) return;
+  // 4. Automatic AI-to-AI Conversation Loop
+  const startAutoConversation = useCallback(async (starterPrompt?: string) => {
+    if (isDualGenerating) return;
 
-    // Reset the latest response states to streaming placeholder
-    const { dualModelA, dualModelB, selectedModel, dualProviderA, dualProviderB, selectedProvider } = useAppStore.getState();
-    const modelA = dualModelA || selectedModel;
-    const modelB = dualModelB || selectedModel;
-    const providerA = dualProviderA || selectedProvider;
-    const providerB = dualProviderB || selectedProvider;
-
-    updateDualResponseA(lastMsg.id, {
-      modelId: modelA?.id || 'model-a',
-      modelName: modelA?.name || modelA?.id || 'Model A',
-      providerId: providerA?.id || 'provider-a',
-      providerName: providerA?.name || 'Provider A',
-      content: '',
-      error: undefined,
-      thinking: undefined,
-      isStreaming: true
-    });
-
-    updateDualResponseB(lastMsg.id, {
-      modelId: modelB?.id || 'model-b',
-      modelName: modelB?.name || modelB?.id || 'Model B',
-      providerId: providerB?.id || 'provider-b',
-      providerName: providerB?.name || 'Provider B',
-      content: '',
-      error: undefined,
-      thinking: undefined,
-      isStreaming: true
-    });
-
-    const controller = new AbortController();
-    setDualGenerating(true, controller);
-
-    try {
-      await Promise.allSettled([
-        streamSingleSlot('A', lastMsg.id, lastMsg.userPrompt, lastMsg.attachments || [], controller.signal),
-        streamSingleSlot('B', lastMsg.id, lastMsg.userPrompt, lastMsg.attachments || [], controller.signal)
-      ]);
-    } finally {
-      setDualGenerating(false, null);
+    const { dualProviderA, dualProviderB, dualModelA, dualModelB } = useAppStore.getState();
+    if (!dualProviderA || !dualModelA || !dualProviderB || !dualModelB) {
+      showNotification('Please configure both AI 1 and AI 2 (provider & model) before starting auto conversation.');
+      return;
     }
-  }, [dualMessages, isDualGenerating, updateDualResponseA, updateDualResponseB, setDualGenerating, streamSingleSlot]);
+
+    if (starterPrompt && starterPrompt.trim()) {
+      addDualUserMessage(starterPrompt.trim(), 'both');
+    }
+
+    setAutoChatState('running');
+    let currentTurn = autoChatCurrentTurn || 0;
+    const limit = autoChatTurnLimit || 10;
+    let nextSpeaker: 'A' | 'B' = currentTurn % 2 === 0 ? 'A' : 'B';
+
+    while (currentTurn < limit) {
+      const liveState = useAppStore.getState().autoChatState;
+      if (liveState !== 'running') {
+        break;
+      }
+
+      currentTurn += 1;
+      setAutoChatCurrentTurn(currentTurn);
+
+      const controller = new AbortController();
+      activeAbortControllerRef.current = controller;
+      setDualGenerating(true, controller);
+
+      let success = false;
+      try {
+        success = await streamSlot(nextSpeaker, controller.signal);
+      } finally {
+        setDualGenerating(false, null);
+        activeAbortControllerRef.current = null;
+      }
+
+      if (!success || controller.signal.aborted) {
+        break;
+      }
+
+      nextSpeaker = nextSpeaker === 'A' ? 'B' : 'A';
+
+      // Brief delay between turns for readability
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+
+    if (currentTurn >= limit) {
+      setAutoChatState('idle');
+      showNotification(`Completed ${limit} conversation turns between AI 1 and AI 2.`);
+    }
+  }, [
+    isDualGenerating,
+    autoChatCurrentTurn,
+    autoChatTurnLimit,
+    showNotification,
+    addDualUserMessage,
+    setAutoChatState,
+    setAutoChatCurrentTurn,
+    setDualGenerating,
+    streamSlot
+  ]);
+
+  const pauseAutoConversation = useCallback(() => {
+    setAutoChatState('paused');
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
+    setDualGenerating(false, null);
+  }, [setAutoChatState, setDualGenerating]);
+
+  const resumeAutoConversation = useCallback(() => {
+    startAutoConversation();
+  }, [startAutoConversation]);
+
+  const stopAutoConversation = useCallback(() => {
+    setAutoChatState('idle');
+    setAutoChatCurrentTurn(0);
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
+    setDualGenerating(false, null);
+  }, [setAutoChatState, setAutoChatCurrentTurn, setDualGenerating]);
+
+  const stopGeneration = useCallback(() => {
+    if (activeAbortControllerRef.current) {
+      activeAbortControllerRef.current.abort();
+    }
+    stopDualGeneration();
+    if (autoChatState === 'running') {
+      setAutoChatState('idle');
+    }
+  }, [stopDualGeneration, autoChatState, setAutoChatState]);
 
   return {
-    sendMessage,
-    regenerate,
-    stopGeneration: stopDualGeneration,
-    isDualGenerating
+    sendToAI1,
+    sendToAI2,
+    sendToBoth,
+    sendMessage: sendToBoth, // Backwards-compatible alias
+    startAutoConversation,
+    pauseAutoConversation,
+    resumeAutoConversation,
+    stopAutoConversation,
+    stopGeneration,
+    clearDualChat,
+    isDualGenerating,
+    autoChatState,
+    autoChatCurrentTurn,
+    autoChatTurnLimit
   };
 }

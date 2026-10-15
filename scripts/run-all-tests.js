@@ -100,7 +100,11 @@ async function main() {
     const { runStorageTests } = await server.ssrLoadModule('./tests/storage/storage.test.ts');
     await runStorageTests(server, assert);
 
-    // 10. Integration suite (conditional on env keys)
+    // 10. DualChat Workspace & State Isolation suite
+    const { runDualChatTests } = await server.ssrLoadModule('./tests/dual/dualChat.test.ts');
+    await runDualChatTests(server, assert);
+
+    // 11. Integration suite (conditional on env keys)
     const { runRealApiIntegrationTests } = await server.ssrLoadModule('./tests/integration/real-api.test.ts');
     await runRealApiIntegrationTests(server, assert, recordSkip);
 

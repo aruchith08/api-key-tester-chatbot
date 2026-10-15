@@ -72,8 +72,21 @@ interface AppState {
   dualModelB: Model | null;
   dualProviderA: ProviderDefinition | null;
   dualProviderB: ProviderDefinition | null;
+  dualApiKeyA: string;
+  dualApiKeyB: string;
+  dualNameA: string;
+  dualNameB: string;
+  dualSystemPromptA: string;
+  dualSystemPromptB: string;
+  dualTemperatureA: number;
+  dualTemperatureB: number;
   isDualGenerating: boolean;
   dualAbortController: AbortController | null;
+
+  // Auto Chat Session
+  autoChatState: 'idle' | 'running' | 'paused' | 'stopped';
+  autoChatTurnLimit: number;
+  autoChatCurrentTurn: number;
   
   // UI States
   activeChatTab: 'chat' | 'dual';
@@ -131,6 +144,22 @@ interface AppState {
   // Dual Chat Actions
   setDualModelA: (model: Model | null, provider?: ProviderDefinition | null) => void;
   setDualModelB: (model: Model | null, provider?: ProviderDefinition | null) => void;
+  setDualProviderA: (provider: ProviderDefinition | null) => void;
+  setDualProviderB: (provider: ProviderDefinition | null) => void;
+  setDualApiKeyA: (key: string) => void;
+  setDualApiKeyB: (key: string) => void;
+  setDualNameA: (name: string) => void;
+  setDualNameB: (name: string) => void;
+  setDualSystemPromptA: (prompt: string) => void;
+  setDualSystemPromptB: (prompt: string) => void;
+  setDualTemperatureA: (temp: number) => void;
+  setDualTemperatureB: (temp: number) => void;
+  setAutoChatState: (state: 'idle' | 'running' | 'paused' | 'stopped') => void;
+  setAutoChatTurnLimit: (limit: number) => void;
+  setAutoChatCurrentTurn: (turn: number) => void;
+  addDualUserMessage: (content: string, target: 'ai1' | 'ai2' | 'both', attachments?: MessageAttachment[]) => string;
+  addDualSlotPlaceholder: (role: 'ai1' | 'ai2', senderName?: string, modelName?: string, providerName?: string) => string;
+  updateDualMessage: (id: string, update: Partial<DualChatMessage>) => void;
   addDualMessagePlaceholder: (prompt: string, attachments?: MessageAttachment[]) => string;
   updateDualResponseA: (id: string, update: Partial<DualMessageResponse>) => void;
   updateDualResponseB: (id: string, update: Partial<DualMessageResponse>) => void;
@@ -171,8 +200,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   dualModelB: null,
   dualProviderA: null,
   dualProviderB: null,
+  dualApiKeyA: '',
+  dualApiKeyB: '',
+  dualNameA: 'AI 1',
+  dualNameB: 'AI 2',
+  dualSystemPromptA: '',
+  dualSystemPromptB: '',
+  dualTemperatureA: 0.7,
+  dualTemperatureB: 0.7,
   isDualGenerating: false,
   dualAbortController: null,
+  autoChatState: 'idle',
+  autoChatTurnLimit: 10,
+  autoChatCurrentTurn: 0,
   
   activeChatTab: 'chat',
   setActiveChatTab: (activeChatTab) => set({ activeChatTab }),
@@ -262,21 +302,14 @@ export const useAppStore = create<AppState>((set, get) => ({
                pool.find(m => m.supportsChat) || 
                pool[0];
     }
-    set((state) => ({
+    set({
       models: pool,
       selectedModel: chosen,
       modelSource: source,
-      dualModelA: state.dualModelA || chosen,
-      dualModelB: state.dualModelB || (pool.length > 1 ? pool[1] : chosen),
-      dualProviderA: state.dualProviderA || state.selectedProvider,
-      dualProviderB: state.dualProviderB || state.selectedProvider,
-    }));
+    });
   },
   
-  setSelectedModel: (selectedModel) => set((state) => ({
-    selectedModel,
-    dualModelA: state.dualModelA || selectedModel
-  })),
+  setSelectedModel: (selectedModel) => set({ selectedModel }),
   setAgentMode: (isAgentMode) => set({ isAgentMode }),
   
   setKeyVaultOpen: (isKeyVaultOpen) => set({ isKeyVaultOpen }),
@@ -527,14 +560,74 @@ export const useAppStore = create<AppState>((set, get) => ({
   setDualModelA: (dualModelA, dualProviderA) => {
     set((state) => ({
       dualModelA,
-      dualProviderA: dualProviderA !== undefined ? dualProviderA : (state.dualProviderA || state.selectedProvider)
+      dualProviderA: dualProviderA !== undefined ? dualProviderA : state.dualProviderA
     }));
   },
 
   setDualModelB: (dualModelB, dualProviderB) => {
     set((state) => ({
       dualModelB,
-      dualProviderB: dualProviderB !== undefined ? dualProviderB : (state.dualProviderB || state.selectedProvider)
+      dualProviderB: dualProviderB !== undefined ? dualProviderB : state.dualProviderB
+    }));
+  },
+
+  setDualProviderA: (dualProviderA) => {
+    set({ dualProviderA, dualModelA: null });
+  },
+
+  setDualProviderB: (dualProviderB) => {
+    set({ dualProviderB, dualModelB: null });
+  },
+
+  setDualApiKeyA: (dualApiKeyA) => set({ dualApiKeyA }),
+  setDualApiKeyB: (dualApiKeyB) => set({ dualApiKeyB }),
+  setDualNameA: (dualNameA) => set({ dualNameA }),
+  setDualNameB: (dualNameB) => set({ dualNameB }),
+  setDualSystemPromptA: (dualSystemPromptA) => set({ dualSystemPromptA }),
+  setDualSystemPromptB: (dualSystemPromptB) => set({ dualSystemPromptB }),
+  setDualTemperatureA: (dualTemperatureA) => set({ dualTemperatureA }),
+  setDualTemperatureB: (dualTemperatureB) => set({ dualTemperatureB }),
+
+  setAutoChatState: (autoChatState) => set({ autoChatState }),
+  setAutoChatTurnLimit: (autoChatTurnLimit) => set({ autoChatTurnLimit }),
+  setAutoChatCurrentTurn: (autoChatCurrentTurn) => set({ autoChatCurrentTurn }),
+
+  addDualUserMessage: (content, target, attachments = []) => {
+    const id = 'dual_user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const newMsg: DualChatMessage = {
+      id,
+      timestamp: Date.now(),
+      role: 'user',
+      content,
+      target,
+      attachments,
+      userPrompt: content
+    };
+    set((state) => ({ dualMessages: [...state.dualMessages, newMsg] }));
+    return id;
+  },
+
+  addDualSlotPlaceholder: (role, senderName, modelName, providerName) => {
+    const id = `dual_${role}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newMsg: DualChatMessage = {
+      id,
+      timestamp: Date.now(),
+      role,
+      content: '',
+      senderName,
+      modelName,
+      providerName,
+      isStreaming: true
+    };
+    set((state) => ({ dualMessages: [...state.dualMessages, newMsg] }));
+    return id;
+  },
+
+  updateDualMessage: (id, update) => {
+    set((state) => ({
+      dualMessages: state.dualMessages.map((m) =>
+        m.id === id ? { ...m, ...update } : m
+      )
     }));
   },
 

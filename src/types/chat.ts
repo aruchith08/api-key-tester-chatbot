@@ -84,11 +84,32 @@ export interface DualMessageResponse {
   };
 }
 
+export type DualMessageTarget = 'ai1' | 'ai2' | 'both';
+
 export interface DualChatMessage {
   id: string;
   timestamp: number;
-  userPrompt: string;
+  role: 'user' | 'ai1' | 'ai2';
+  content: string;
+  thinking?: string;
+  isStreaming?: boolean;
+  error?: string;
+  errorDiagnostic?: NormalizedError;
+  target?: DualMessageTarget;
+  senderName?: string;
+  modelName?: string;
+  providerName?: string;
   attachments?: MessageAttachment[];
-  responseA: DualMessageResponse;
-  responseB: DualMessageResponse;
+  metrics?: {
+    ttftMs?: number;
+    totalDurationMs?: number;
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+  // Backwards compatibility fields for legacy views
+  userPrompt?: string;
+  responseA?: DualMessageResponse;
+  responseB?: DualMessageResponse;
 }
+

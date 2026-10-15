@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { ProviderRegistry } from '../../providers/registry';
-import { ApiKeyStorage } from '../../services/apiKeyStorage';
 import type { Model, ProviderDefinition } from '../../types/provider';
 import { Search, Zap, Check, X, ShieldCheck } from 'lucide-react';
 
@@ -20,27 +19,37 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
     dualProviderB,
     setDualModelA,
     setDualModelB,
+    dualNameA,
+    dualNameB,
+    setDualNameA,
+    setDualNameB,
     storedKeys
   } = useAppStore();
 
+  const isSlotA = slot === 'A';
+  const accentText = isSlotA ? 'text-blue-400' : 'text-pink-400';
+  const accentBorder = isSlotA ? 'border-blue-500/50' : 'border-pink-500/50';
+  const accentBg = isSlotA ? 'bg-blue-600' : 'bg-pink-600';
+  const badgeClass = isSlotA 
+    ? 'bg-blue-950/60 text-blue-300 border-blue-800/40' 
+    : 'bg-pink-950/60 text-pink-300 border-pink-800/40';
+
+  const initialProviderId = slot === 'A'
+    ? (dualProviderA?.id || selectedProvider?.id || 'groq')
+    : (dualProviderB?.id || selectedProvider?.id || 'groq');
+
   const [search, setSearch] = useState('');
-  const [selectedProviderId, setSelectedProviderId] = useState<string>(
-    slot === 'A'
-      ? (dualProviderA?.id || selectedProvider?.id || 'groq')
-      : (dualProviderB?.id || selectedProvider?.id || 'groq')
-  );
+  const [selectedProviderId, setSelectedProviderId] = useState<string>(initialProviderId);
 
   const activeProvider = useMemo(() => {
-    return ProviderRegistry.getById(selectedProviderId) || selectedProvider || ProviderRegistry.getAll()[0];
-  }, [selectedProviderId, selectedProvider]);
+    return ProviderRegistry.getById(selectedProviderId) || ProviderRegistry.getAll()[0];
+  }, [selectedProviderId]);
 
   // Models available for this provider
   const availableModels = useMemo<Model[]>(() => {
-    // If activeProvider is current connected provider, use live models from store
     if (activeProvider.id === selectedProvider?.id && models.length > 0) {
       return models;
     }
-    // Otherwise use default curated/catalog models from registry
     return ProviderRegistry.getCuratedModels(activeProvider.id);
   }, [activeProvider, selectedProvider, models]);
 
@@ -61,25 +70,31 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
   const handleSelectModel = (model: Model) => {
     if (slot === 'A') {
       setDualModelA(model, activeProvider);
+      if (!dualNameA || dualNameA === 'AI 1') {
+        setDualNameA(model.name || model.id);
+      }
     } else {
       setDualModelB(model, activeProvider);
+      if (!dualNameB || dualNameB === 'AI 2') {
+        setDualNameB(model.name || model.id);
+      }
     }
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full max-w-xl bg-[#121215] border border-[#24242A] rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+        className="w-full max-w-xl bg-[#101014] border border-[#222228] rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#202025]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E1E24]">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
-              <span>Select AI for Model {slot}</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-[#1E1E24] text-neutral-300 border border-[#2F2F38]">
-                Slot {slot}
+              <span>Select Model for AI {slot === 'A' ? '1' : '2'}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-medium border ${badgeClass}`}>
+                Slot {slot === 'A' ? '1 (Blue)' : '2 (Pink)'}
               </span>
             </h2>
             <p className="text-xs text-neutral-400 mt-0.5">
@@ -96,12 +111,17 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
         </div>
 
         {/* Provider Selector Strip */}
-        <div className="px-5 py-3 border-b border-[#202025] bg-[#0E0E11]">
-          <label className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider block mb-1.5">
-            AI Provider
-          </label>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-            {ProviderRegistry.getAll().slice(0, 15).map((prov) => {
+        <div className="px-5 py-3 border-b border-[#1E1E24] bg-[#0B0B0E]">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
+              Choose Provider
+            </label>
+            <span className="text-[11px] text-neutral-500 font-mono">
+              22 Available
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin">
+            {ProviderRegistry.getAll().map((prov) => {
               const hasStoredKey = storedKeys.some(k => k.providerId === prov.id);
               const isCurrent = prov.id === selectedProviderId;
               return (
@@ -109,10 +129,10 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
                   key={prov.id}
                   type="button"
                   onClick={() => setSelectedProviderId(prov.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     isCurrent
-                      ? 'bg-[#22222A] text-white border border-neutral-600 shadow-sm'
-                      : 'bg-[#151518] text-neutral-400 hover:text-neutral-200 border border-[#242429]'
+                      ? `bg-[#1E1E26] text-white border ${accentBorder} shadow-sm`
+                      : 'bg-[#141418] text-neutral-400 hover:text-neutral-200 border border-[#24242A]'
                   }`}
                 >
                   <span>{prov.name}</span>
@@ -126,7 +146,7 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
         </div>
 
         {/* Search Input */}
-        <div className="px-5 py-3 border-b border-[#1E1E22]">
+        <div className="px-5 py-2.5 border-b border-[#1A1A20] bg-[#0E0E12]">
           <div className="relative">
             <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -134,7 +154,7 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={`Search ${activeProvider.name} models...`}
-              className="w-full bg-[#18181C] text-sm text-white placeholder-neutral-500 pl-9 pr-3 py-2 rounded-xl border border-[#282830] focus:outline-none focus:border-neutral-500 transition-colors"
+              className="w-full bg-[#16161B] text-sm text-white placeholder-neutral-500 pl-9 pr-3 py-2 rounded-xl border border-[#26262E] focus:outline-none focus:border-neutral-500 transition-colors"
               autoFocus
             />
           </div>
@@ -159,8 +179,8 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
                   onClick={() => handleSelectModel(m)}
                   className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-[#1E1E26] border-emerald-500/50 shadow-sm'
-                      : 'bg-[#151518] hover:bg-[#1A1A20] border-[#222228] hover:border-[#303038]'
+                      ? `bg-[#1A1A22] ${accentBorder} shadow-sm`
+                      : 'bg-[#131317] hover:bg-[#18181E] border-[#202026] hover:border-[#2E2E38]'
                   }`}
                 >
                   <div className="min-w-0 pr-3">
@@ -191,7 +211,7 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
                       </span>
                     )}
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-black">
+                      <div className={`w-5 h-5 rounded-full ${accentBg} flex items-center justify-center text-white`}>
                         <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                       </div>
                     )}
@@ -203,12 +223,12 @@ export const DualModelModal: React.FC<DualModelModalProps> = ({ slot, onClose })
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#202025] bg-[#0E0E11] flex items-center justify-between text-xs text-neutral-400">
-          <span>{filteredModels.length} models available</span>
+        <div className="px-5 py-3 border-t border-[#1E1E24] bg-[#0B0B0E] flex items-center justify-between text-xs text-neutral-400">
+          <span>{filteredModels.length} models for {activeProvider.name}</span>
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 bg-[#1F1F24] hover:bg-[#282830] text-neutral-200 rounded-xl font-medium transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 bg-[#1B1B20] hover:bg-[#25252C] text-neutral-200 rounded-xl font-medium transition-colors cursor-pointer"
           >
             Cancel
           </button>
